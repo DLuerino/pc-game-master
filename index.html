@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PC Game Master: ¿Me Corre? | Verificador de Requisitos para Juegos PC</title>
+  <meta name="description" content="Comprueba si tu PC puede correr cualquier juego. Ingresa tu GPU, CPU y RAM y obtené estimaciones de FPS y calidad gráfica al instante. Gratis y sin registro." />
+  <meta name="keywords" content="requisitos juegos PC, puede correr mi PC, FPS estimado, GPU benchmark, RX 6600 XT, RTX 3060, Cyberpunk 2077 requisitos" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://pcgamemaster.com/" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='48'%3E%F0%9F%96%A5%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="PC Game Master: ¿Me Corre?" />
+  <meta property="og:description" content="Verificá en segundos si tu PC puede correr tus juegos favoritos. FPS estimado y calidad gráfica." />
+  <meta property="og:type" content="website" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            neon: '#39ff14',
+            neonDim: '#1aff00',
+            neonFaint: 'rgba(57,255,20,0.08)',
+            dark: '#080a08',
+            darkCard: '#0d110d',
+            darkBorder: '#1a2e1a',
+            grayMid: '#2a3a2a',
+          },
+          fontFamily: {
+            orbitron: ['Orbitron', 'sans-serif'],
+            mono: ['Share Tech Mono', 'monospace'],
+            body: ['Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            neon: '0 0 8px rgba(57,255,20,0.5), 0 0 24px rgba(57,255,20,0.2)',
+            neonLg: '0 0 16px rgba(57,255,20,0.6), 0 0 48px rgba(57,255,20,0.25)',
+            neonInner: 'inset 0 0 20px rgba(57,255,20,0.06)',
+          },
+          animation: {
+            'pulse-neon': 'pulseNeon 2s ease-in-out infinite',
+            'scanline': 'scanline 8s linear infinite',
+            'flicker': 'flicker 0.15s infinite',
+            'slide-in': 'slideIn 0.5s cubic-bezier(0.23, 1, 0.32, 1)',
+            'counter': 'counter 1.2s ease-out',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --neon: #39ff14;
+      --neon-glow: rgba(57, 255, 20, 0.5);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: #080a08;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(57,255,20,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(57,255,20,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.07) 2px,
+        rgba(0,0,0,0.07) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .content-layer { position: relative; z-index: 2; }
+
+    /* Neon text */
+    .neon-text {
+      color: var(--neon);
+      text-shadow: 0 0 8px var(--neon-glow), 0 0 20px rgba(57,255,20,0.3);
+    }
+
+    .neon-title {
+      color: var(--neon);
+      text-shadow: 0 0 10px var(--neon-glow), 0 0 30px rgba(57,255,20,0.4), 0 0 60px rgba(57,255,20,0.15);
+    }
+
+    /* Cards */
+    .game-card {
+      background: #0d110d;
+      border: 1px solid #1a2e1a;
+      transition: all 0.25s ease;
+    }
+    .game-card:hover {
+      border-color: var(--neon);
+      box-shadow: 0 0 16px rgba(57,255,20,0.25);
+    }
+
+    /* Custom select */
+    select {
+      appearance: none;
+      background-color: #0d110d;
+      border: 1px solid #1a2e1a;
+      color: #c8d8c8;
+      font-family: 'Share Tech Mono', monospace;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2339ff14' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: calc(100% - 12px) center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    select:focus {
+      outline: none;
+      border-color: var(--neon);
+      box-shadow: 0 0 0 2px rgba(57,255,20,0.2);
+    }
+    select option { background: #0d110d; color: #c8d8c8; }
+
+    /* Input search */
+    input[type="search"], input[type="text"] {
+      background-color: #0d110d;
+      border: 1px solid #1a2e1a;
+      color: #c8d8c8;
+      font-family: 'Share Tech Mono', monospace;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--neon);
+      box-shadow: 0 0 0 2px rgba(57,255,20,0.2);
+    }
+    input::placeholder { color: #3a4a3a; }
+
+    /* CTA Button */
+    .btn-analyze {
+      background: linear-gradient(135deg, #39ff14 0%, #1aff00 50%, #00cc00 100%);
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-analyze::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -60%;
+      width: 30%;
+      height: 200%;
+      background: rgba(255,255,255,0.25);
+      transform: skewX(-20deg);
+      transition: left 0.4s ease;
+    }
+    .btn-analyze:hover::before { left: 130%; }
+    .btn-analyze:hover {
+      box-shadow: 0 0 20px rgba(57,255,20,0.7), 0 0 50px rgba(57,255,20,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-analyze:active { transform: translateY(0); }
+
+    /* Scaling toggle */
+    .scaling-toggle {
+      border: 1px solid #1a2e1a;
+      background: #0d110d;
+    }
+    .switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      border-radius: 9999px;
+      border: 1px solid #244224;
+      background: #0b0f0b;
+      transition: all 0.2s ease;
+      box-shadow: inset 0 0 10px rgba(57,255,20,0.05);
+    }
+    .switch-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      background: #2d3d2d;
+      transition: all 0.2s ease;
+    }
+    #toggle-upscaling:checked + .switch {
+      border-color: #39ff14;
+      background: rgba(57,255,20,0.14);
+      box-shadow: 0 0 12px rgba(57,255,20,0.35), inset 0 0 8px rgba(57,255,20,0.2);
+    }
+    #toggle-upscaling:checked + .switch .switch-thumb {
+      transform: translateX(24px);
+      background: #39ff14;
+      box-shadow: 0 0 10px rgba(57,255,20,0.6);
+    }
+
+    /* Result card animation */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .result-card { animation: slideIn 0.5s cubic-bezier(0.23,1,0.32,1) forwards; }
+
+    /* FPS counter */
+    @keyframes countUp {
+      from { opacity: 0; transform: scale(0.6); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .fps-number { animation: countUp 0.6s 0.2s cubic-bezier(0.34,1.56,0.64,1) both; }
+
+    /* Tier badges */
+    .tier-LOW    { color: #ff4444; text-shadow: 0 0 10px rgba(255,68,68,0.6); }
+    .tier-MEDIUM { color: #ffaa00; text-shadow: 0 0 10px rgba(255,170,0,0.6); }
+    .tier-HIGH   { color: #39ff14; text-shadow: 0 0 10px rgba(57,255,20,0.6); }
+    .tier-ULTRA  { color: #00cfff; text-shadow: 0 0 10px rgba(0,207,255,0.7); }
+
+    .bar-LOW    { background: #ff4444; box-shadow: 0 0 8px rgba(255,68,68,0.5); }
+    .bar-MEDIUM { background: #ffaa00; box-shadow: 0 0 8px rgba(255,170,0,0.5); }
+    .bar-HIGH   { background: #39ff14; box-shadow: 0 0 8px rgba(57,255,20,0.5); }
+    .bar-ULTRA  { background: #00cfff; box-shadow: 0 0 8px rgba(0,207,255,0.5); }
+
+    /* Progress bar animation */
+    @keyframes growBar {
+      from { width: 0%; }
+    }
+    .perf-bar { animation: growBar 1s 0.4s ease-out both; }
+
+    /* AdSense placeholders */
+    .adsense-placeholder {
+      border: 2px dashed #1a2e1a;
+      background: rgba(57,255,20,0.02);
+      color: #2a4a2a;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      transition: border-color 0.2s;
+    }
+    .adsense-placeholder:hover { border-color: #39ff14; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #080a08; }
+    ::-webkit-scrollbar-thumb { background: #1a2e1a; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--neon); }
+
+    /* Game chips */
+    .game-chip {
+      background: #0d110d;
+      border: 1px solid #1a2e1a;
+      color: #7a9a7a;
+      font-family: 'Share Tech Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .game-chip:hover, .game-chip.selected {
+      border-color: var(--neon);
+      color: var(--neon);
+      background: rgba(57,255,20,0.06);
+      box-shadow: 0 0 8px rgba(57,255,20,0.2);
+    }
+
+    /* Glitch effect on title */
+    @keyframes glitch {
+      0%, 90%, 100% { clip-path: none; transform: none; }
+      91% { clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%); transform: translateX(-3px); }
+      93% { clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%); transform: translateX(3px); }
+      95% { clip-path: polygon(0 40%, 100% 40%, 100% 60%, 0 60%); transform: translateX(-2px); }
+    }
+    .glitch { animation: glitch 5s infinite; }
+
+    /* Loader */
+    .loader {
+      width: 40px; height: 40px;
+      border: 3px solid #1a2e1a;
+      border-top-color: var(--neon);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .hidden { display: none !important; }
+
+    /* Dropdown suggestions */
+    #game-suggestions {
+      background: #0d110d;
+      border: 1px solid #1a2e1a;
+      z-index: 50;
+    }
+    .suggestion-item {
+      color: #7a9a7a;
+      font-family: 'Share Tech Mono', monospace;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .suggestion-item:hover {
+      background: rgba(57,255,20,0.08);
+      color: var(--neon);
+    }
+  </style>
+</head>
+<body class="min-h-screen text-gray-300">
+
+<div class="content-layer">
+
+  <!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+  <header class="border-b border-[#1a2e1a] bg-[#080a08]/90 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded border border-neon flex items-center justify-center" style="box-shadow: 0 0 8px rgba(57,255,20,0.4);">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#39ff14" stroke-width="2">
+            <rect x="2" y="4" width="20" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>
+            <path d="M9 9h1M14 9h1M11.5 11V9.5M11.5 9.5H10M11.5 9.5H13"/>
+          </svg>
+        </div>
+        <span class="font-orbitron font-black text-sm neon-text tracking-wider">PC GAME MASTER</span>
+      </div>
+      <nav class="hidden md:flex items-center gap-6 text-xs font-mono text-[#4a6a4a]">
+        <a href="#herramienta" class="hover:text-neon transition-colors">HERRAMIENTA</a>
+        <a href="#faq" class="hover:text-neon transition-colors">FAQ</a>
+        <a href="#contacto" class="hover:text-neon transition-colors">CONTACTO</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8 md:py-12">
+
+    <!-- ═══════════════════════════════ HERO ═══════════════════════════════ -->
+    <section class="text-center mb-10 md:mb-14" id="herramienta">
+      <div class="inline-block mb-4">
+        <span class="text-xs font-mono text-[#39ff14] border border-[#1a2e1a] px-3 py-1 rounded-full" style="background: rgba(57,255,20,0.05);">
+          ⚡ VERIFICADOR GRATUITO · SIN REGISTRO
+        </span>
+      </div>
+      <h1 class="font-orbitron font-black text-3xl md:text-5xl lg:text-6xl leading-tight mb-4 glitch">
+        <span class="neon-title">¿ME CORRE</span><br/>
+        <span class="text-white">EL JUEGO?</span>
+      </h1>
+      <p class="text-[#5a7a5a] font-mono text-sm md:text-base max-w-xl mx-auto leading-relaxed">
+        Ingresá tu GPU, CPU y RAM · Elegí el juego · Obtené tu estimación de FPS y calidad gráfica al instante
+      </p>
+    </section>
+
+    <!-- ═══════════════════════ AD PLACEHOLDER TOP ═══════════════════════ -->
+    <div class="adsense-placeholder rounded-lg p-4 text-center mb-10 min-h-[90px] flex items-center justify-center">
+      <!-- GOOGLE ADSENSE: Reemplazá este div con tu código de anuncio -->
+      <div>
+        <p class="text-[#2a4a2a] text-xs mb-1">▓ PUBLICIDAD GOOGLE ADSENSE ▓</p>
+        <p class="text-[#1a3a1a] text-[10px]">Leaderboard 728×90 · Colocá aquí tu script de AdSense</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════ MAIN TOOL ═══════════════════════════ -->
+    <section class="game-card rounded-2xl p-6 md:p-8 mb-8" style="box-shadow: inset 0 0 40px rgba(57,255,20,0.04);">
+
+      <div class="flex items-center gap-3 mb-7">
+        <div class="w-2 h-6 bg-neon rounded-full" style="box-shadow: 0 0 8px rgba(57,255,20,0.8);"></div>
+        <h2 class="font-orbitron font-bold text-white text-lg tracking-wide">CONFIGURAR MI PC</h2>
+      </div>
+
+      <!-- PC SPECS GRID -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-7">
+
+        <!-- GPU -->
+        <div>
+          <label class="block text-[10px] font-mono text-[#4a6a4a] mb-2 tracking-widest uppercase">// Tarjeta Gráfica (GPU)</label>
+          <select id="select-gpu" class="w-full px-4 py-3 rounded-lg text-sm pr-10">
+            <option value="">— Seleccionar GPU —</option>
+            <optgroup label="AMD Radeon">
+              <option value="rx6600xt">RX 6600 XT (8GB)</option>
+              <option value="rx6700xt">RX 6700 XT (12GB)</option>
+              <option value="rx6800xt">RX 6800 XT (16GB)</option>
+              <option value="rx7600">RX 7600 (8GB)</option>
+              <option value="rx7800xt">RX 7800 XT (16GB)</option>
+              <option value="rx7900xtx">RX 7900 XTX (24GB)</option>
+              <option value="rx580">RX 580 (8GB)</option>
+              <option value="rx5700xt">RX 5700 XT (8GB)</option>
+            </optgroup>
+            <optgroup label="NVIDIA GeForce">
+              <option value="rtx3060">RTX 3060 (12GB)</option>
+              <option value="rtx3060ti">RTX 3060 Ti (8GB)</option>
+              <option value="rtx3070">RTX 3070 (8GB)</option>
+              <option value="rtx3080">RTX 3080 (10GB)</option>
+              <option value="rtx4060">RTX 4060 (8GB)</option>
+              <option value="rtx4060ti">RTX 4060 Ti (8GB)</option>
+              <option value="rtx4070">RTX 4070 (12GB)</option>
+              <option value="rtx4070ti">RTX 4070 Ti (12GB)</option>
+              <option value="rtx4090">RTX 4090 (24GB)</option>
+              <option value="gtx1660super">GTX 1660 Super (6GB)</option>
+              <option value="gtx1070">GTX 1070 (8GB)</option>
+            </optgroup>
+            <optgroup label="Intel Arc">
+              <option value="arca770">Arc A770 (16GB)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- CPU -->
+        <div>
+          <label class="block text-[10px] font-mono text-[#4a6a4a] mb-2 tracking-widest uppercase">// Procesador (CPU)</label>
+          <select id="select-cpu" class="w-full px-4 py-3 rounded-lg text-sm pr-10">
+            <option value="">— Seleccionar CPU —</option>
+            <optgroup label="AMD Ryzen">
+              <option value="r5_5600g">Ryzen 5 5600G</option>
+              <option value="r5_5600x">Ryzen 5 5600X</option>
+              <option value="r5_7600x">Ryzen 5 7600X</option>
+              <option value="r7_5700x">Ryzen 7 5700X</option>
+              <option value="r7_7700x">Ryzen 7 7700X</option>
+              <option value="r9_5900x">Ryzen 9 5900X</option>
+              <option value="r9_7900x">Ryzen 9 7900X</option>
+              <option value="r3_3300x">Ryzen 3 3300X</option>
+            </optgroup>
+            <optgroup label="Intel Core">
+              <option value="i5_10400f">Core i5-10400F</option>
+              <option value="i5_12400f">Core i5-12400F</option>
+              <option value="i5_13600k">Core i5-13600K</option>
+              <option value="i7_12700k">Core i7-12700K</option>
+              <option value="i7_13700k">Core i7-13700K</option>
+              <option value="i9_13900k">Core i9-13900K</option>
+              <option value="i3_12100f">Core i3-12100F</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- RAM -->
+        <div>
+          <label class="block text-[10px] font-mono text-[#4a6a4a] mb-2 tracking-widest uppercase">// Memoria RAM</label>
+          <select id="select-ram" class="w-full px-4 py-3 rounded-lg text-sm pr-10">
+            <option value="">— Seleccionar RAM —</option>
+            <option value="8">8 GB RAM</option>
+            <option value="16">16 GB RAM</option>
+            <option value="32">32 GB RAM</option>
+            <option value="64">64 GB RAM</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- DIVIDER -->
+      <div class="border-t border-[#1a2e1a] mb-7"></div>
+
+      <!-- GAME SEARCH -->
+      <div class="mb-7">
+        <label class="block text-[10px] font-mono text-[#4a6a4a] mb-2 tracking-widest uppercase">// Buscar Juego</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3a5a3a" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+          </div>
+          <input type="text" id="game-search" placeholder="Ej: Cyberpunk 2077, Elden Ring..."
+            class="w-full pl-10 pr-4 py-3 rounded-lg text-sm" autocomplete="off" />
+          <div id="game-suggestions" class="absolute w-full mt-1 rounded-lg overflow-hidden hidden"></div>
+        </div>
+
+        <!-- Quick chips -->
+        <div class="flex flex-wrap gap-2 mt-3" id="game-chips">
+          <span class="text-[10px] font-mono text-[#2a4a2a] self-center mr-1">RÁPIDO:</span>
+        </div>
+      </div>
+
+      <div class="scaling-toggle rounded-lg p-3 mb-4 flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[10px] font-mono text-[#4a6a4a] tracking-widest uppercase mb-1">// Escalado Inteligente</p>
+          <p class="text-xs font-mono text-[#7a9a7a]">Activar FSR/DLSS</p>
+        </div>
+        <label for="toggle-upscaling" class="cursor-pointer">
+          <input id="toggle-upscaling" type="checkbox" class="sr-only" checked />
+          <span class="switch block">
+            <span class="switch-thumb"></span>
+          </span>
+        </label>
+      </div>
+
+      <!-- ANALYZE BUTTON -->
+      <button id="btn-analyze" class="btn-analyze w-full py-4 rounded-xl text-base tracking-widest uppercase">
+        ⚡ ANALIZAR COMPATIBILIDAD
+      </button>
+
+    </section>
+
+    <!-- ═══════════════════════════ RESULT AREA ═══════════════════════════ -->
+    <div id="result-area" class="mb-8 hidden"></div>
+
+    <!-- ═══════════════════════ AD PLACEHOLDER MID ═══════════════════════ -->
+    <div class="adsense-placeholder rounded-lg p-4 text-center mb-8 min-h-[250px] flex items-center justify-center">
+      <div>
+        <p class="text-[#2a4a2a] text-xs mb-1">▓ PUBLICIDAD GOOGLE ADSENSE ▓</p>
+        <p class="text-[#1a3a1a] text-[10px]">Rectangle 300×250 · Colocá aquí tu script de AdSense</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════ FAQ ═══════════════════════════════ -->
+    <section id="faq" class="mb-8">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-2 h-6 bg-neon rounded-full" style="box-shadow: 0 0 8px rgba(57,255,20,0.8);"></div>
+        <h2 class="font-orbitron font-bold text-white text-lg tracking-wide">PREGUNTAS FRECUENTES</h2>
+      </div>
+      <p class="text-[#4a6a4a] font-mono text-xs mb-6">// Guías para optimizar tu PC y sacarle el máximo rendimiento</p>
+
+      <div id="faq-container" class="space-y-3"></div>
+    </section>
+
+    <!-- ═══════════════════════ AD PLACEHOLDER BOTTOM ═══════════════════════ -->
+    <div class="adsense-placeholder rounded-lg p-4 text-center mb-10 min-h-[90px] flex items-center justify-center">
+      <div>
+        <p class="text-[#2a4a2a] text-xs mb-1">▓ PUBLICIDAD GOOGLE ADSENSE ▓</p>
+        <p class="text-[#1a3a1a] text-[10px]">Leaderboard 728×90 · Colocá aquí tu script de AdSense</p>
+      </div>
+    </div>
+
+  </main>
+  <section class="max-w-4xl mx-auto my-12 p-5 sm:p-6 bg-[#121712] border border-[#1f2f1f] rounded-lg shadow-xl text-gray-300">
+    <h2 class="text-2xl font-bold text-green-400 mb-5">Preguntas Frecuentes para Gamers en Windows 11</h2>
+    <div class="space-y-3">
+      <details class="group bg-[#0e140e] border border-[#1a2a1a] rounded-md p-4">
+        <summary class="cursor-pointer list-none font-semibold text-green-300 flex items-center justify-between gap-3">
+          <span>¿Cuál es la diferencia entre requisitos mínimos y recomendados?</span>
+          <span class="text-[#3a5a3a] group-open:rotate-90 transition-transform">▶</span>
+        </summary>
+        <p class="mt-3 text-sm text-gray-300 leading-relaxed">
+          Los requisitos mínimos apuntan a que el juego inicie y sea jugable, normalmente en calidad baja y cerca de 30 FPS.
+          Los recomendados están pensados para una experiencia más estable, por ejemplo 60 FPS en 1080p con calidad media o alta.
+        </p>
+      </details>
+
+      <details class="group bg-[#0e140e] border border-[#1a2a1a] rounded-md p-4">
+        <summary class="cursor-pointer list-none font-semibold text-green-300 flex items-center justify-between gap-3">
+          <span>¿Cómo optimizar Windows 11 para mejorar FPS?</span>
+          <span class="text-[#3a5a3a] group-open:rotate-90 transition-transform">▶</span>
+        </summary>
+        <p class="mt-3 text-sm text-gray-300 leading-relaxed">
+          Activá Modo Juego, mantené actualizados los drivers de GPU, cerrá apps en segundo plano y usá un plan de energía de alto rendimiento.
+          También ayuda habilitar tecnologías como FSR o DLSS cuando el juego las ofrece.
+        </p>
+      </details>
+
+      <details class="group bg-[#0e140e] border border-[#1a2a1a] rounded-md p-4">
+        <summary class="cursor-pointer list-none font-semibold text-green-300 flex items-center justify-between gap-3">
+          <span>¿La RX 6600 XT sigue siendo buena para jugar en 1080p?</span>
+          <span class="text-[#3a5a3a] group-open:rotate-90 transition-transform">▶</span>
+        </summary>
+        <p class="mt-3 text-sm text-gray-300 leading-relaxed">
+          Sí. La RX 6600 XT mantiene un rendimiento competitivo en 1080p en muchos títulos actuales, especialmente combinada con un CPU equilibrado
+          y 16 GB de RAM o más. Ajustar sombras, trazado de rayos y escalado suele dar una mejora importante en estabilidad de FPS.
+        </p>
+      </details>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+  <footer id="contacto" class="border-t border-[#1a2e1a] bg-[#080a08]">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div>
+          <div class="font-orbitron font-black text-sm neon-text mb-3">PC GAME MASTER</div>
+          <p class="text-[#3a5a3a] text-xs font-mono leading-relaxed">
+            Herramienta gratuita para verificar la compatibilidad de tu PC con los últimos juegos. Sin registro, sin costos.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-orbitron text-xs text-[#4a6a4a] tracking-widest mb-3">ENLACES</h3>
+          <ul class="space-y-2">
+            <li><a href="#herramienta" class="text-xs font-mono text-[#3a5a3a] hover:text-neon transition-colors">→ Verificador de Juegos</a></li>
+            <li><a href="#faq" class="text-xs font-mono text-[#3a5a3a] hover:text-neon transition-colors">→ Preguntas Frecuentes</a></li>
+            <li><a href="#" class="text-xs font-mono text-[#3a5a3a] hover:text-neon transition-colors">→ Cómo funciona</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="font-orbitron text-xs text-[#4a6a4a] tracking-widest mb-3">LEGAL</h3>
+          <ul class="space-y-2">
+            <li><a href="privacy.html" class="text-xs font-mono text-[#3a5a3a] hover:text-neon transition-colors">→ Política de Privacidad</a></li>
+            <li><a href="terms.html" class="text-xs font-mono text-[#3a5a3a] hover:text-neon transition-colors">→ Términos de Servicio</a></li>
+            <li><a href="contact.html" class="text-xs font-mono text-[#3a5a3a] hover:text-neon transition-colors">→ Contacto</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-[#1a2e1a] pt-6 flex flex-col md:flex-row items-center justify-between gap-3">
+        <p class="text-[#2a4a2a] text-[10px] font-mono text-center md:text-left">
+          © <span class="year-update"></span> PC Game Master · Las estimaciones son aproximadas...
+        </p>
+        <p class="text-[#2a4a2a] text-[10px] font-mono">Hecho con energía gamer</p>
+      </div>
+    </div>
+  </footer>
+
+<script src="src/js/script.js"></script>
+<script>document.querySelectorAll('.year-update').forEach(el => el.textContent = new Date().getFullYear());</script>
+</body>
+</html>

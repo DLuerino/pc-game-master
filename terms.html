@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Términos de Servicio | PC Game Master</title>
+  <meta name="description" content="Términos de uso de PC Game Master." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #080a08; color: #c8d8c8; font-family: Inter, sans-serif; }
+    .card { background: #0d110d; border: 1px solid #1a2e1a; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="border-b border-[#1a2e1a] bg-[#080a08]">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <a href="index.html" class="text-[#39ff14] font-black tracking-wide">PC GAME MASTER</a>
+      <a href="index.html" class="text-xs text-[#7a9a7a] hover:text-[#39ff14]">← Volver al verificador</a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-10">
+    <section class="card rounded-xl p-6 sm:p-8">
+      <h1 class="text-2xl font-bold text-[#39ff14] mb-4">Términos de Servicio</h1>
+      <div class="space-y-4 text-sm leading-relaxed text-[#9ab39a]">
+        <p>PC Game Master ofrece estimaciones orientativas de rendimiento con base en perfiles de hardware y reglas de cálculo. Estas estimaciones no constituyen una garantía de FPS exactos en todos los equipos.</p>
+        <p>El rendimiento real puede variar por factores externos como temperatura, estado del sistema operativo, versión de drivers, parches del juego, resolución, configuración gráfica y procesos en segundo plano.</p>
+        <p>Al usar esta web aceptás que la herramienta es informativa y que los resultados deben tomarse como referencia para decisiones de optimización o compra.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-[#1a2e1a] bg-[#080a08]">
+    <div class="max-w-4xl mx-auto px-4 py-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+      <p class="text-[11px] text-[#4a6a4a]">© <span class="js-current-year"></span> PC Game Master</p>
+      <nav class="flex flex-wrap gap-4 text-[11px]">
+        <a href="privacy.html" class="text-[#6f926f] hover:text-[#39ff14]">Privacidad</a>
+        <a href="terms.html" class="text-[#6f926f] hover:text-[#39ff14]">Términos</a>
+        <a href="contact.html" class="text-[#6f926f] hover:text-[#39ff14]">Contacto</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script>
+    document.querySelectorAll(".js-current-year").forEach((el) => {
+      el.textContent = new Date().getFullYear();
+    });
+  </script>
+</body>
+</html>

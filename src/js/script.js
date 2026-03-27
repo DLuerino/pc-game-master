@@ -1,0 +1,984 @@
+/**
+ * PC Game Master: ¿Me Corre?
+ * script.js — Lógica principal modular
+ * ─────────────────────────────────────
+ * Para agregar más juegos: añadí una entrada nueva al objeto `gamesData`.
+ * Para agregar más GPUs/CPUs: actualizá `src/js/hardware_db.json`.
+ */
+
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════════════════
+   1. BASE DE DATOS DE HARDWARE (JSON externo)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+let hardwareDatabase = { gpus: {}, cpus: {} };
+
+async function loadHardwareDatabase() {
+  try {
+    const response = await fetch("src/js/hardware_db.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!data?.gpus || !data?.cpus) throw new Error("Estructura inválida en hardware_db.json");
+    hardwareDatabase = data;
+  } catch (error) {
+    console.warn("No se pudo cargar hardware_db.json; usando fallback por nombre.", error);
+    hardwareDatabase = { gpus: {}, cpus: {} };
+  }
+}
+
+function estimateGpuBenchmarkByName(name = "") {
+  const n = name.toLowerCase();
+  if (n.includes("rtx 4090")) return 1000;
+  if (n.includes("rtx 4080") || n.includes("rtx 4070 ti")) return 930;
+  if (n.includes("rtx 40")) return 820;
+  if (n.includes("rtx 30")) return 680;
+  if (n.includes("rtx 20")) return 540;
+  if (n.includes("rx 79")) return 950;
+  if (n.includes("rx 78")) return 830;
+  if (n.includes("rx 7")) return 680;
+  if (n.includes("rx 6")) return 560;
+  if (n.includes("rx 5")) return 430;
+  if (n.includes("rx 4")) return 300;
+  if (n.includes("gtx 16")) return 350;
+  if (n.includes("gtx 10")) return 300;
+  if (n.includes("arc")) return 600;
+  return 500;
+}
+
+function estimateCpuBenchmarkByName(name = "") {
+  const n = name.toLowerCase();
+  if (n.includes("i9-14") || n.includes("14900")) return 1000;
+  if (n.includes("i7-14") || n.includes("14700")) return 940;
+  if (n.includes("i5-14")) return 860;
+  if (n.includes("i9-13") || n.includes("13900")) return 980;
+  if (n.includes("i7-13") || n.includes("13700")) return 920;
+  if (n.includes("i5-13") || n.includes("13600")) return 810;
+  if (n.includes("i7-12") || n.includes("12700")) return 780;
+  if (n.includes("i5-12") || n.includes("12400")) return 610;
+  if (n.includes("i9-11") || n.includes("11900")) return 680;
+  if (n.includes("i7-11") || n.includes("11700")) return 610;
+  if (n.includes("i5-11") || n.includes("11400")) return 510;
+  if (n.includes("i9-10") || n.includes("10900")) return 620;
+  if (n.includes("i7-10") || n.includes("10700")) return 550;
+  if (n.includes("i5-10") || n.includes("10400")) return 430;
+  if (n.includes("i9-9") || n.includes("9900")) return 500;
+  if (n.includes("i7-9") || n.includes("9700")) return 420;
+  if (n.includes("i5-9") || n.includes("9400")) return 340;
+  if (n.includes("ryzen 7 3")) return 560;
+  if (n.includes("ryzen 5 3")) return 500;
+  if (n.includes("ryzen 7 2")) return 420;
+  if (n.includes("ryzen 5 2")) return 360;
+  if (n.includes("ryzen 7 1")) return 320;
+  if (n.includes("ryzen 5 1")) return 300;
+  if (n.includes("ryzen 9 7")) return 900;
+  if (n.includes("ryzen 7 7")) return 760;
+  if (n.includes("ryzen 5 7")) return 680;
+  if (n.includes("ryzen 9 5")) return 740;
+  if (n.includes("ryzen 7 5")) return 620;
+  if (n.includes("ryzen 5 5")) return 530;
+  return 560;
+}
+
+function getGpuUpscalingFactor(gpu) {
+  if (!gpu) return 1.4;
+  return gpu.upscalingFactor || (String(gpu.name).includes("RTX") ? 1.6 : 1.4);
+}
+
+function getGpuData(gpuKey, gpuLabel = "") {
+  const known = hardwareDatabase.gpus[gpuKey];
+  if (known) return { ...known };
+  const lookupName = gpuLabel || String(gpuKey || "GPU");
+  return {
+    name: lookupName,
+    benchmark: estimateGpuBenchmarkByName(lookupName),
+    vram: 8,
+    architecture: lookupName.toUpperCase().includes("RTX") ? "nvidia-rtx" : "fallback",
+    upscalingFactor: lookupName.toUpperCase().includes("RTX") ? 1.6 : 1.4,
+  };
+}
+
+function getCpuData(cpuKey, cpuLabel = "") {
+  const known = hardwareDatabase.cpus[cpuKey];
+  if (known) return { ...known };
+  const lookupName = cpuLabel || String(cpuKey || "CPU");
+  return { name: lookupName, benchmark: estimateCpuBenchmarkByName(lookupName) };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   2. BASE DE DATOS DE JUEGOS
+   ──────────────────────────────────────────────────────────────────────────
+   Estructura base de cada juego:
+   {
+     name: string,
+     genre: string,
+     year: number,
+     minRam: number,
+     minVram: number,
+     minGpuScore: number,       // benchmark relativo 0-1000
+     minCpuScore: number,       // benchmark relativo 0-1000
+     minCombinedScore: number,  // umbral de rendimiento global
+     optimizationMultiplier: number, // factor de optimización del juego
+   }
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const baseGamesData = {
+  "Diablo IV": {
+    name: "Diablo IV",
+    genre: "Action RPG",
+    year: 2023,
+    emoji: "👹",
+    minRam: 8,
+    minVram: 4,
+    minGpuScore: 260,
+    minCpuScore: 300,
+    minCombinedScore: 280,
+    optimizationMultiplier: 1.15,
+  },
+
+  "Cyberpunk 2077": {
+    name: "Cyberpunk 2077",
+    genre: "Action RPG / Open World",
+    year: 2020,
+    emoji: "🌃",
+    minRam: 12,
+    minVram: 6,
+    minGpuScore: 340,
+    minCpuScore: 420,
+    minCombinedScore: 430,
+    optimizationMultiplier: 0.62,
+  },
+
+  "Elden Ring": {
+    name: "Elden Ring",
+    genre: "Action RPG / Soulslike",
+    year: 2022,
+    emoji: "⚔️",
+    minRam: 12,
+    minVram: 4,
+    minGpuScore: 280,
+    minCpuScore: 360,
+    minCombinedScore: 360,
+    optimizationMultiplier: 0.92,
+  },
+
+  "World of Warcraft": {
+    name: "World of Warcraft",
+    genre: "MMORPG",
+    year: 2004,
+    emoji: "🐉",
+    minRam: 8,
+    minVram: 2,
+    minGpuScore: 180,
+    minCpuScore: 260,
+    minCombinedScore: 220,
+    optimizationMultiplier: 1.8,
+  },
+
+  "League of Legends": {
+    name: "League of Legends",
+    genre: "MOBA",
+    year: 2009,
+    emoji: "🏆",
+    minRam: 4,
+    minVram: 1,
+    minGpuScore: 130,
+    minCpuScore: 200,
+    minCombinedScore: 170,
+    optimizationMultiplier: 2.55,
+  },
+
+  "Counter-Strike 2": {
+    name: "Counter-Strike 2",
+    genre: "FPS competitivo",
+    year: 2023,
+    emoji: "🎯",
+    minRam: 8,
+    minVram: 2,
+    minGpuScore: 170,
+    minCpuScore: 260,
+    minCombinedScore: 240,
+    optimizationMultiplier: 2.85,
+  },
+
+  /* ── AGREGA MÁS JUEGOS AQUÍ — copia el bloque de arriba y modificalo ── */
+};
+
+let gamesData = { ...baseGamesData };
+let gameCatalog = [];
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function inferEmoji(gameName) {
+  const n = gameName.toLowerCase();
+  if (n.includes("ring") || n.includes("souls")) return "⚔️";
+  if (n.includes("cyber")) return "🌃";
+  if (n.includes("war") || n.includes("duty")) return "🎯";
+  if (n.includes("dota") || n.includes("league")) return "🏆";
+  if (n.includes("witcher")) return "🐺";
+  if (n.includes("gta") || n.includes("theft")) return "🚗";
+  if (n.includes("monster")) return "🐲";
+  return "🎮";
+}
+
+function parseFirstNumber(regex, text, fallback) {
+  const match = text.match(regex);
+  if (!match) return fallback;
+  return Number.parseInt(match[1], 10);
+}
+
+function getOptimizationMultiplierByName(gameName = "") {
+  const n = gameName.toLowerCase();
+  // Competitivos / eSports: mantener > 1.5 para FPS altos en 1080p
+  if (n.includes("counter-strike") || n.includes("cs2")) return 2.85;
+  if (n.includes("league") || n.includes("valorant") || n.includes("dota")) return 2.65;
+  if (n.includes("warcraft") || n.includes("wow")) return 1.8;
+  if (n.includes("diablo")) return 1.15;
+  // AAA con FSR/DLSS muy efectivos (open world / acción)
+  if (n.includes("cyberpunk")) return 0.62;
+  if (n.includes("elden")) return 0.92;
+  if (n.includes("witcher") || n.includes("hogwarts") || n.includes("starfield")) return 0.58;
+  if (n.includes("red dead") || n.includes("gta")) return 0.82;
+  return 1.0;
+}
+
+function isEsportsGame(gameName = "") {
+  const n = gameName.toLowerCase();
+  return n.includes("counter-strike") || n.includes("cs2") || n.includes("league") || n.includes("valorant") || n.includes("dota");
+}
+
+function parseGameProfileFromRequirements(record) {
+  const raw = `${record.min_req || ""} ${record.rec_req || ""}`;
+  const minRam = clamp(parseFirstNumber(/(\d+)\s*GB\s+de\s+RAM/i, raw, 8), 4, 32);
+
+  const graphicsSection = ((record.min_req || "").match(/(gr[aá]ficos|video)[^<]*<\/li>/i) || [record.min_req || ""])[0];
+  const minVram = clamp(parseFirstNumber(/(\d+)\s*GB/i, graphicsSection, 4), 1, 16);
+
+  const minGpuScore = clamp(160 + minVram * 38, 120, 760);
+  const minCpuScore = clamp(180 + minRam * 20, 180, 820);
+  const minCombinedScore = clamp(Math.round(minGpuScore * 0.7 + minCpuScore * 0.3), 160, 780);
+
+  return {
+    name: record.name,
+    genre: "Juego de PC",
+    year: new Date().getFullYear(),
+    emoji: inferEmoji(record.name),
+    minRam,
+    minVram,
+    minGpuScore,
+    minCpuScore,
+    minCombinedScore,
+    optimizationMultiplier: getOptimizationMultiplierByName(record.name),
+  };
+}
+
+async function loadGamesFromJson() {
+  try {
+    const response = await fetch("src/js/games_db.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const records = await response.json();
+    if (!Array.isArray(records) || records.length === 0) throw new Error("JSON sin juegos");
+
+    const merged = {};
+    records.forEach(record => {
+      if (!record || !record.name) return;
+      const canonicalName = Object.keys(baseGamesData).find(name => name.toLowerCase() === record.name.toLowerCase());
+      if (canonicalName) {
+        merged[canonicalName] = { ...baseGamesData[canonicalName] };
+      } else {
+        merged[record.name] = parseGameProfileFromRequirements(record);
+      }
+    });
+
+    gamesData = Object.keys(merged).length > 0 ? merged : { ...baseGamesData };
+  } catch (error) {
+    console.warn("No se pudo cargar games_db.json; usando catálogo local.", error);
+    gamesData = { ...baseGamesData };
+  }
+
+  gameCatalog = Object.keys(gamesData);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   3. FAQ DATA — Para SEO
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const faqData = [
+  {
+    q: "¿Cómo optimizo Windows 11 para jugar mejor?",
+    a: `Hay varios pasos clave para sacarle el máximo rendimiento a Windows 11 al jugar:
+<br><br>
+<strong>1. Activar Modo Juego:</strong> Ir a Configuración → Juegos → Modo Juego y activarlo. Esto prioriza recursos de CPU y GPU para el juego activo.
+<br><br>
+<strong>2. Desactivar Xbox Game Bar y capturas en segundo plano:</strong> En Configuración → Juegos → Xbox Game Bar, apagarlo si no lo usás. El grabado en segundo plano consume hasta un 10% del rendimiento.
+<br><br>
+<strong>3. Plan de energía alto rendimiento:</strong> En Panel de control → Opciones de energía → Elegir plan de energía de alto rendimiento. En laptops, esto es crítico.
+<br><br>
+<strong>4. Drivers actualizados:</strong> Mantener los drivers de GPU siempre actualizados (AMD Adrenalin / NVIDIA GeForce Experience). Una actualización de driver puede mejorar FPS hasta un 15% en juegos optimizados.
+<br><br>
+<strong>5. Desactivar aplicaciones en segundo plano:</strong> Ctrl+Alt+Supr → Administrador de tareas → Ver qué consume CPU/RAM y cerrarlo antes de jugar.`,
+  },
+  {
+    q: "¿Cuánta RAM necesito para jugar en 2025?",
+    a: `La RAM óptima para gaming en 2025 es <strong>16 GB</strong> como mínimo funcional. Aquí el desglose:
+<br><br>
+<strong>8 GB RAM:</strong> Suficiente para juegos antiguos o eSports competitivos (LoL, CS2, Valorant). En AAA modernos como Cyberpunk 2077 o Hogwarts Legacy podés notar stuttering y tiempos de carga más largos.
+<br><br>
+<strong>16 GB RAM:</strong> El estándar actual. Permite jugar cualquier título moderno con comodidad y mantener el navegador abierto al mismo tiempo.
+<br><br>
+<strong>32 GB RAM:</strong> Ideal si jugás títulos de mundo abierto muy exigentes, usás mods pesados (Skyrim, Minecraft con shaderpacks) o hacés streaming mientras jugás.
+<br><br>
+También importa el tipo y frecuencia: <strong>DDR4-3200 MHz</strong> o superior es recomendable. Con procesadores AMD Ryzen, la velocidad de RAM afecta directamente el rendimiento del procesador gráfico integrado.`,
+  },
+  {
+    q: "¿Qué es el VRAM y por qué importa en los juegos?",
+    a: `La <strong>VRAM (Video RAM)</strong> es la memoria dedicada de tu tarjeta gráfica, y es fundamental para el rendimiento en juegos modernos.
+<br><br>
+<strong>¿Qué almacena la VRAM?</strong> Texturas del juego, sombras, efectos de iluminación, fotogramas renderizados. Cuanto más alta la resolución y calidad gráfica, más VRAM necesitás.
+<br><br>
+<strong>Guía por cantidad de VRAM:</strong><br>
+• <strong>4 GB:</strong> Suficiente para 1080p en calidad baja/media en juegos de hace 2-3 años.<br>
+• <strong>6 GB:</strong> Aceptable para 1080p en la mayoría de juegos actuales en calidad media.<br>
+• <strong>8 GB:</strong> El estándar actual para 1080p en calidad alta y 1440p en media.<br>
+• <strong>12 GB+:</strong> Necesario para 1440p Ultra o 4K, y para juegos con texturas en alta resolución (4K texture packs).
+<br><br>
+Si tu VRAM se satura, el juego empieza a usar la RAM del sistema como reemplazo, lo que causa bajones de FPS severos y stuttering. Por eso, la RX 6600 XT con 8 GB y la RTX 3060 con 12 GB son tan populares para gaming en 1080p/1440p.`,
+  },
+  {
+    q: "¿Qué es mejor para gaming: AMD o NVIDIA en 2025?",
+    a: `Ambas marcas ofrecen excelentes opciones en 2025, y la mejor elección depende de tu uso específico:
+<br><br>
+<strong>AMD Radeon (RX 6000 / RX 7000):</strong><br>
+✅ Mejor relación precio/rendimiento en rasterización pura<br>
+✅ Más VRAM por el precio (ej: RX 6700 XT 12GB vs RTX 3060 Ti 8GB)<br>
+✅ Open source: compatibilidad en Linux superior<br>
+❌ Ray tracing inferior en equivalentes de precio<br>
+❌ FSR (FidelityFX Super Resolution) es bueno pero no tan eficiente como DLSS 3
+<br><br>
+<strong>NVIDIA GeForce (RTX 3000 / RTX 4000):</strong><br>
+✅ DLSS 3 con Frame Generation: hasta 2x más FPS en juegos compatibles<br>
+✅ Mejor Ray Tracing y Path Tracing<br>
+✅ Ecosistema maduro: RTX Video, NVENC encoder para streaming<br>
+❌ Menos VRAM por el precio en gama media<br>
+❌ Precio premium vs AMD en misma clase de rendimiento
+<br><br>
+<strong>Veredicto 2025:</strong> Para jugar en 1080p con presupuesto ajustado → AMD. Para Ray Tracing, 1440p/4K o streaming con calidad → NVIDIA.`,
+  },
+  {
+    q: "¿Cómo mejorar los FPS sin cambiar hardware?",
+    a: `Antes de invertir en nuevo hardware, probá estas optimizaciones de software que pueden subir tus FPS entre un 10% y un 30%:
+<br><br>
+<strong>Configuración de juego:</strong><br>
+• Bajá Sombras a Media: es el ajuste que más CPU/GPU consume, con poco impacto visual en movimiento<br>
+• Desactivá Oclusión Ambiental (AO) o bajala a SSAO (en lugar de HBAO+/GTAO)<br>
+• Activá FSR 2/3 (AMD) o DLSS (NVIDIA) si el juego lo soporta — podés ganar 30-50% de FPS<br>
+• Limitá los FPS al doble del Hz de tu monitor para evitar recalentamiento innecesario
+<br><br>
+<strong>Sistema operativo:</strong><br>
+• Desfragmentá el HDD o revisá el estado del SSD (CrystalDiskInfo es gratis)<br>
+• Desactivá el arranque rápido de Windows (causa issues de rendimiento en algunos sistemas)<br>
+• Actualizá DirectX y Visual C++ Redistributable desde Microsoft
+<br><br>
+<strong>Drivers y software:</strong><br>
+• AMD: activá Radeon Anti-Lag 2 y desactivá Virtual Super Resolution<br>
+• NVIDIA: en Panel de Control NVIDIA → Administrar configuración 3D → Activar "Modo de baja latencia" en Máximo<br>
+• Desactivá Vsync en el juego (usá G-Sync o FreeSync en su lugar si tenés el monitor compatible)`,
+  },
+  {
+    q: "¿Qué resolución debo elegir: 1080p, 1440p o 4K?",
+    a: `La resolución ideal depende de tu monitor, GPU y tipo de juego:
+<br><br>
+<strong>1080p (Full HD):</strong> La resolución más popular en gaming. Ideal para GPUs de gama media como RX 6600 XT, RTX 3060 o RTX 4060. Para juegos competitivos (LoL, CS2, Valorant), 1080p + alta tasa de refresco (144Hz+) es la combinación ganadora.
+<br><br>
+<strong>1440p (2K / QHD):</strong> El sweet spot en 2025 para gaming premium. Requiere GPU como RX 6700 XT, RTX 3070 o superior. Ofrece imagen notablemente más nítida que 1080p, especialmente en monitores de 27"+.
+<br><br>
+<strong>4K (Ultra HD):</strong> Para los setups más potentes. Necesitás una RX 7900 XTX, RTX 4080 o RTX 4090 para jugar en Ultra/Alto con buena tasa de fotogramas. DLSS 3 y FSR 3 ayudan mucho en esta resolución.
+<br><br>
+<strong>Consejo:</strong> No tiene sentido tener una GPU de 4K con un monitor de 1080p, ni viceversa. Equilibrá tu GPU con la resolución de tu monitor actual.`,
+  },
+];
+
+/* ══════════════════════════════════════════════════════════════════════════
+   4. MOTOR DE ANÁLISIS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Calcula el resultado de compatibilidad dado el hardware y el juego.
+ * @param {string} gpuKey - Clave de hardwareDatabase.gpus
+ * @param {string} cpuKey - Clave de hardwareDatabase.cpus
+ * @param {number} ram    - GB de RAM
+ * @param {string} gameName - Nombre del juego en gamesData
+ * @param {boolean} scalingEnabled - aplica bonus de DLSS/FSR si esta activo
+ * @param {string} gpuLabel - texto visible del selector GPU
+ * @param {string} cpuLabel - texto visible del selector CPU
+ * @returns {object} resultado
+ */
+function analyzeCompatibility(gpuKey, cpuKey, ram, gameName, scalingEnabled, gpuLabel = "", cpuLabel = "") {
+  const gpu  = getGpuData(gpuKey, gpuLabel);
+  const cpu  = getCpuData(cpuKey, cpuLabel);
+  const game = gamesData[gameName];
+
+  if (!gpu || !cpu || !game) return null;
+
+  const issues = [];
+  if (gpu.benchmark < game.minGpuScore) issues.push(`GPU por debajo del mínimo recomendado para ${game.name}`);
+  if (cpu.benchmark < game.minCpuScore) issues.push(`CPU por debajo del mínimo recomendado para ${game.name}`);
+  if (ram < game.minRam) issues.push(`RAM insuficiente (mínimo ${game.minRam} GB)`);
+  if (gpu.vram < game.minVram) issues.push(`VRAM insuficiente (mínimo ${game.minVram} GB)`);
+
+  // Fórmula benchmark relativo:
+  // (Puntaje_GPU * 0.7 + Puntaje_CPU * 0.3) * Multiplicador_Optimización_Juego
+  let performanceScore = (gpu.benchmark * 0.7 + cpu.benchmark * 0.3) * (game.optimizationMultiplier || 1);
+
+  // eSports: prioriza CPU y favorece FPS altos en gama media/alta
+  const esports = isEsportsGame(game.name);
+  if (esports) {
+    const cpuHeadroom = clamp(cpu.benchmark / 1000, 0.3, 1.1);
+    performanceScore *= (1 + cpuHeadroom * 0.28);
+  }
+
+  // Multiplicadores por tecnologías de escalado (simulación DLSS/FSR)
+  let optimizationNote = "";
+  if (scalingEnabled) {
+    const upscaleFactor = getGpuUpscalingFactor(gpu);
+    if (upscaleFactor >= 1.6) {
+      performanceScore *= 1.6;
+      optimizationNote = "Resultado optimizado mediante DLSS";
+    } else {
+      performanceScore *= 1.4;
+      optimizationNote = "Resultado optimizado mediante FSR";
+    }
+  }
+
+  // Penalización severa por VRAM insuficiente (stuttering)
+  let vramPenaltyApplied = false;
+  if (gpu.vram < game.minVram) {
+    performanceScore *= 0.6;
+    vramPenaltyApplied = true;
+  }
+
+  let ramPenaltyApplied = false;
+  if (ram < game.minRam + 4) {
+    performanceScore *= 0.9;
+    ramPenaltyApplied = true;
+  }
+
+  const fpsAverage = clamp(Math.round(performanceScore / 8), 15, 360);
+  const fpsMin = Math.round(fpsAverage * 0.82);
+  const fpsMax = Math.round(fpsAverage * 1.18);
+
+  let tier = "LOW";
+  if (performanceScore < game.minCombinedScore * 0.75) tier = "NO_CORRE";
+  else if (fpsMax >= 140) tier = "ULTRA";
+  else if (fpsMax >= 90) tier = "HIGH";
+  else if (fpsMax >= 55) tier = "MEDIUM";
+
+  const monitorNote = fpsMax > 60 ? "Rendimiento ideal para tu monitor de 60Hz" : "";
+
+  return {
+    tier,
+    fpsMin,
+    fpsMax,
+    cpuPenaltyApplied: cpu.benchmark < game.minCpuScore,
+    ramPenaltyApplied,
+    vramPenaltyApplied,
+    optimizationNote,
+    monitorNote,
+    performanceScore: Math.round(performanceScore),
+    optimizationMultiplier: game.optimizationMultiplier || 1,
+    issues: issues,
+    gpu, cpu, ram, game,
+  };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   5. RENDERIZADO DE RESULTADOS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+const tierLabels = {
+  NO_CORRE: { label: "NO COMPATIBLE",   emoji: "💀", desc: "Tu PC no cumple los requisitos mínimos" },
+  LOW:      { label: "CALIDAD BAJA",    emoji: "⚠️", desc: "Requiere ajustar configuración gráfica a baja" },
+  MEDIUM:   { label: "CALIDAD MEDIA",   emoji: "✅", desc: "Corre fluido en calidad media/alta en 1080p" },
+  HIGH:     { label: "CALIDAD ALTA",    emoji: "🔥", desc: "Excelente rendimiento en configuración alta" },
+  ULTRA:    { label: "CALIDAD ULTRA",   emoji: "🚀", desc: "Corre perfecto en Ultra — ¡Go play!" },
+};
+
+const tierBarWidths = { NO_CORRE: "15%", LOW: "25%", MEDIUM: "55%", HIGH: "78%", ULTRA: "100%" };
+
+function renderResult(result) {
+  if (!result) return "<p class='text-red-400 font-mono text-sm'>Error al calcular. Verificá los datos.</p>";
+
+  const t = result.tier;
+  const tInfo = tierLabels[t];
+  const barWidth = tierBarWidths[t];
+
+  const warningsHtml = result.issues.length > 0
+    ? `<div class="mt-4 space-y-1">
+        ${result.issues.map(w => `<div class="flex items-center gap-2 text-yellow-400 font-mono text-xs"><span>⚠</span><span>${w}</span></div>`).join("")}
+       </div>`
+    : "";
+
+  const penaltiesHtml = [];
+  if (result.cpuPenaltyApplied) penaltiesHtml.push("🔸 CPU limita el rendimiento de tu GPU (CPU bottleneck)");
+  if (result.ramPenaltyApplied) penaltiesHtml.push("🔸 RAM por debajo del recomendado — puede haber stuttering");
+  if (result.vramPenaltyApplied) penaltiesHtml.push("🔸 VRAM insuficiente: se aplica penalización del 40% por stuttering");
+
+  const penaltiesSection = penaltiesHtml.length > 0
+    ? `<div class="mt-3 space-y-1 border-t border-[#1a2e1a] pt-3">
+        ${penaltiesHtml.map(p => `<p class="text-[#aa8800] font-mono text-xs">${p}</p>`).join("")}
+       </div>`
+    : "";
+
+  const dynamicNotes = [];
+  if (result.optimizationNote) dynamicNotes.push(result.optimizationNote);
+  if (result.monitorNote) dynamicNotes.push(result.monitorNote);
+
+  const notesSection = dynamicNotes.length > 0
+    ? `<div class="mt-3 pt-3 border-t border-[#1a2e1a] space-y-1">
+        ${dynamicNotes.map(n => `<p class="text-[11px] text-[#7aa57a] font-mono">${n}</p>`).join("")}
+       </div>`
+    : "";
+
+  const fpsSection = t !== "NO_CORRE"
+    ? `<div class="text-center">
+        <div class="text-[10px] font-mono text-[#4a6a4a] mb-1 tracking-widest uppercase">FPS estimados · 1080p</div>
+        <div class="fps-number font-orbitron font-black text-5xl md:text-6xl tier-${t}">
+          ${result.fpsMin}<span class="text-2xl opacity-50">–</span>${result.fpsMax}
+        </div>
+        <div class="text-[#4a6a4a] font-mono text-xs mt-1">fotogramas por segundo</div>
+       </div>`
+    : `<div class="text-center">
+        <div class="font-orbitron font-black text-3xl text-red-500" style="text-shadow: 0 0 10px rgba(255,50,50,0.5)">NO CORRE</div>
+        <div class="text-[#4a6a4a] font-mono text-xs mt-2">Necesitás mejorar tu hardware</div>
+       </div>`;
+
+  return `
+    <div class="result-card game-card rounded-2xl overflow-hidden" style="box-shadow: inset 0 0 40px rgba(57,255,20,0.04);">
+
+      <!-- Header de resultado -->
+      <div class="bg-[#0a120a] border-b border-[#1a2e1a] px-6 py-4 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <div class="text-[10px] font-mono text-[#4a6a4a] tracking-widest mb-1">// RESULTADO PARA</div>
+          <div class="font-orbitron font-black text-white text-xl">${result.game.emoji} ${result.game.name}</div>
+          <div class="text-[#3a5a3a] font-mono text-xs mt-0.5">${result.game.genre} · ${result.game.year}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-2xl mb-1">${tInfo.emoji}</div>
+          <div class="font-orbitron font-bold text-sm tier-${t}">${tInfo.label}</div>
+          <div class="text-[#3a5a3a] font-mono text-[10px] mt-0.5">${tInfo.desc}</div>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+
+        <!-- FPS y barra de rendimiento -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          ${fpsSection}
+
+          <div>
+            <div class="text-[10px] font-mono text-[#4a6a4a] mb-3 tracking-widest uppercase">Rendimiento general</div>
+            <!-- Barras de calidad -->
+            ${["LOW","MEDIUM","HIGH","ULTRA"].map(lvl => {
+              const isActive = (
+                (lvl === "LOW" && ["LOW","MEDIUM","HIGH","ULTRA"].includes(t) && t !== "NO_CORRE") ||
+                (lvl === "MEDIUM" && ["MEDIUM","HIGH","ULTRA"].includes(t)) ||
+                (lvl === "HIGH" && ["HIGH","ULTRA"].includes(t)) ||
+                (lvl === "ULTRA" && t === "ULTRA")
+              );
+              const labels = { LOW:"Baja", MEDIUM:"Media", HIGH:"Alta", ULTRA:"Ultra" };
+              return `
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-14 text-[10px] font-mono text-right ${isActive ? `tier-${lvl}` : "text-[#2a3a2a]"}">${labels[lvl]}</div>
+                  <div class="flex-1 h-2 bg-[#0d110d] rounded-full overflow-hidden border border-[#1a2e1a]">
+                    ${isActive ? `<div class="perf-bar h-full rounded-full bar-${lvl}" style="width:${barWidth}"></div>` : ""}
+                  </div>
+                </div>`;
+            }).join("")}
+          </div>
+        </div>
+
+        ${renderCommunityTips(result)}
+
+        <!-- Specs de tu PC -->
+        <div class="bg-[#0a0e0a] rounded-xl p-4 border border-[#1a2e1a]">
+          <div class="text-[10px] font-mono text-[#4a6a4a] mb-3 tracking-widest uppercase">// Tu configuración analizada</div>
+          <div class="grid grid-cols-3 gap-3">
+            <div class="text-center">
+              <div class="text-[10px] font-mono text-[#3a5a3a] mb-1">GPU</div>
+              <div class="font-mono text-xs text-[#7a9a7a]">${result.gpu.name}</div>
+            </div>
+            <div class="text-center border-x border-[#1a2e1a]">
+              <div class="text-[10px] font-mono text-[#3a5a3a] mb-1">CPU</div>
+              <div class="font-mono text-xs text-[#7a9a7a]">${result.cpu.name}</div>
+            </div>
+            <div class="text-center">
+              <div class="text-[10px] font-mono text-[#3a5a3a] mb-1">RAM</div>
+              <div class="font-mono text-xs text-[#7a9a7a]">${result.ram} GB</div>
+            </div>
+          </div>
+          <div class="mt-3 pt-3 border-t border-[#1a2e1a] grid grid-cols-1 md:grid-cols-3 gap-2">
+            <p class="text-[11px] font-mono text-[#6f926f]">GPU Score: <span class="text-[#9fd89f]">${result.gpu.benchmark}</span></p>
+            <p class="text-[11px] font-mono text-[#6f926f]">CPU Score: <span class="text-[#9fd89f]">${result.cpu.benchmark}</span></p>
+            <p class="text-[11px] font-mono text-[#6f926f]">Opt. Juego: <span class="text-[#9fd89f]">x${result.optimizationMultiplier.toFixed(2)}</span></p>
+          </div>
+          ${warningsHtml}
+          ${penaltiesSection}
+          ${notesSection}
+        </div>
+
+        <!-- Tips según el resultado -->
+        ${renderTips(result)}
+
+      </div>
+    </div>
+  `;
+}
+
+function renderCommunityTips(result) {
+  const gameName = (result?.game?.name || "").toLowerCase();
+  let tips = [];
+
+  if (gameName.includes("cyberpunk")) {
+    tips = [
+      "Bajá Nubes Volumétricas y Reflejos SSR a Medio para estabilizar picos de GPU.",
+      "Activá FSR o DLSS en modo Calidad para subir FPS sin perder demasiada nitidez.",
+      "Desactivá Ray Tracing en presets medios si priorizás fluidez sobre fidelidad visual."
+    ];
+  } else if (gameName.includes("red dead") || gameName.includes("rdr2")) {
+    tips = [
+      "Reducí Calidad de Agua y Física de Agua: son de los ajustes más costosos en RDR2.",
+      "Bajá TAA Sharpen y Sombras Lejanas para evitar stutter en zonas con mucha vegetación.",
+      "Usá FSR en modo Calidad y dejá Texturas en Alto para equilibrar imagen y rendimiento."
+    ];
+  } else {
+    tips = [
+      "Cerrá apps en segundo plano antes de jugar para liberar RAM y CPU.",
+      "Mantené drivers de GPU actualizados y activá el modo de energía de alto rendimiento.",
+      "Probá bajar sombras primero: suele dar la mejor mejora de FPS con poco impacto visual."
+    ];
+  }
+
+  return `
+    <div class="bg-[#0a120a] rounded-xl border border-[#1a2e1a] p-4 sm:p-5">
+      <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <h3 class="font-orbitron text-sm sm:text-base text-[#9fd89f] tracking-wide">Configuración Recomendada por Usuarios</h3>
+        <span class="text-[10px] font-mono text-[#4a6a4a]">// Tips de la comunidad</span>
+      </div>
+
+      <ul class="space-y-2 mb-4">
+        ${tips.map((tip) => `<li class="text-xs sm:text-sm text-[#7a9a7a] font-mono leading-relaxed">• ${tip}</li>`).join("")}
+      </ul>
+
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <a
+          href="https://forms.gle/m9mU318bhJvzAGRP6"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-orbitron font-bold text-xs sm:text-sm tracking-wide text-black bg-[#39ff14] hover:brightness-110 transition"
+        >
+          <span>💬</span>
+          <span>Reportar mis FPS Reales</span>
+        </a>
+        <p class="text-[11px] sm:text-xs font-mono text-[#5f7f5f]">Ayúdanos a calibrar el motor para Latinoamérica</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderTips(result) {
+  const t = result.tier;
+  if (t === "NO_CORRE") {
+    return `<div class="bg-red-950/30 border border-red-900/40 rounded-xl p-4">
+      <div class="text-[10px] font-mono text-red-400/60 mb-2 tracking-widest">// RECOMENDACIONES</div>
+      <ul class="space-y-1.5">
+        <li class="font-mono text-xs text-red-400/80">→ Actualizá tu GPU a una de gama media (RX 6600 XT / RTX 3060 mínimo)</li>
+        <li class="font-mono text-xs text-red-400/80">→ Verificá los requisitos mínimos oficiales del juego</li>
+        <li class="font-mono text-xs text-red-400/80">→ Considerá bajar la resolución a 720p como alternativa temporal</li>
+      </ul>
+    </div>`;
+  }
+  if (t === "LOW") {
+    return `<div class="bg-yellow-950/20 border border-yellow-900/30 rounded-xl p-4">
+      <div class="text-[10px] font-mono text-yellow-400/60 mb-2 tracking-widest">// TIPS PARA MEJORAR</div>
+      <ul class="space-y-1.5">
+        <li class="font-mono text-xs text-yellow-400/80">→ Bajá sombras a "Baja" o "Apagado" — mayor impacto en FPS</li>
+        <li class="font-mono text-xs text-yellow-400/80">→ Activá FSR 2 (AMD) o DLSS (NVIDIA) si el juego lo soporta</li>
+        <li class="font-mono text-xs text-yellow-400/80">→ Cerrá todas las aplicaciones en segundo plano antes de jugar</li>
+        <li class="font-mono text-xs text-yellow-400/80">→ Reducí la resolución a 900p puede darte un 20-30% más de FPS</li>
+      </ul>
+    </div>`;
+  }
+  if (t === "MEDIUM") {
+    return `<div class="bg-[#0d110d] border border-[#1a2e1a] rounded-xl p-4">
+      <div class="text-[10px] font-mono text-[#4a6a4a] mb-2 tracking-widest">// TIPS PARA EXPRIMIR MÁS</div>
+      <ul class="space-y-1.5">
+        <li class="font-mono text-xs text-[#5a7a5a]">→ Activá ReBAR (Resizable BAR) en BIOS si tu placa lo soporta</li>
+        <li class="font-mono text-xs text-[#5a7a5a]">→ Ajustá las sombras — podés subirlas a Alta con poco impacto</li>
+        <li class="font-mono text-xs text-[#5a7a5a]">→ Verificá que tu GPU esté en el slot PCIe x16 principal</li>
+      </ul>
+    </div>`;
+  }
+  if (t === "HIGH" || t === "ULTRA") {
+    return `<div class="bg-[#0d110d] border border-[#1a2e1a] rounded-xl p-4">
+      <div class="text-[10px] font-mono text-neon mb-2 tracking-widest" style="color: #39ff14;">// ¡LISTO PARA JUGAR!</div>
+      <ul class="space-y-1.5">
+        <li class="font-mono text-xs text-[#5a7a5a]">→ Tu PC está optimizada para este juego — activá Ray Tracing si está disponible</li>
+        <li class="font-mono text-xs text-[#5a7a5a]">→ Considerá usar G-Sync o FreeSync para una experiencia aún más fluida</li>
+        <li class="font-mono text-xs text-[#5a7a5a]">→ Si querés, podés subir a 1440p o 4K con este hardware</li>
+      </ul>
+    </div>`;
+  }
+  return "";
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   6. FAQ RENDERER
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function renderFAQ() {
+  const container = document.getElementById("faq-container");
+  if (!container) return;
+
+  container.innerHTML = faqData.map((item, idx) => `
+    <div class="faq-item game-card rounded-xl overflow-hidden" data-idx="${idx}">
+      <button class="faq-toggle w-full text-left px-5 py-4 flex items-center justify-between gap-4 hover:bg-[#0f160f] transition-colors">
+        <div class="flex items-start gap-3">
+          <span class="text-neon font-orbitron text-xs mt-0.5 shrink-0" style="color:#39ff14">Q${String(idx+1).padStart(2,"0")}</span>
+          <span class="font-mono text-sm text-[#8aaa8a] font-medium">${item.q}</span>
+        </div>
+        <span class="faq-icon text-[#39ff14] text-xl leading-none shrink-0">+</span>
+      </button>
+      <div class="faq-content hidden px-5 text-[#5a7a5a] font-body text-sm leading-relaxed">
+        <div class="pb-4 border-t border-[#1a2e1a] pt-4">${item.a}</div>
+      </div>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".faq-toggle").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = btn.closest(".faq-item");
+      const content = item.querySelector(".faq-content");
+      const isOpen = item.classList.contains("open");
+
+      // Cerrar todos
+      container.querySelectorAll(".faq-item").forEach(el => {
+        el.classList.remove("open");
+        el.querySelector(".faq-content").classList.remove("open");
+        el.querySelector(".faq-content").classList.add("hidden");
+        el.querySelector(".faq-icon").textContent = "+";
+      });
+
+      // Abrir el clickeado si estaba cerrado
+      if (!isOpen) {
+        item.classList.add("open");
+        content.classList.remove("hidden");
+        content.classList.add("open");
+        btn.querySelector(".faq-icon").textContent = "−";
+      }
+    });
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. GAME SEARCH & CHIPS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+let selectedGame = "";
+let hasRenderedResult = false;
+
+function getCurrentSelections() {
+  const gpuSelect = document.getElementById("select-gpu");
+  const cpuSelect = document.getElementById("select-cpu");
+  return {
+    gpuKey: gpuSelect.value,
+    cpuKey: cpuSelect.value,
+    gpuLabel: gpuSelect.options[gpuSelect.selectedIndex]?.text || "",
+    cpuLabel: cpuSelect.options[cpuSelect.selectedIndex]?.text || "",
+    ramVal: document.getElementById("select-ram").value,
+    scalingEnabled: document.getElementById("toggle-upscaling")?.checked ?? true,
+  };
+}
+
+function canAnalyzeNow({ gpuKey, cpuKey, ramVal }) {
+  return Boolean(gpuKey && cpuKey && ramVal && selectedGame);
+}
+
+function runAnalysis({ showValidation = false, withLoader = false, smoothScroll = false } = {}) {
+  const resultArea = document.getElementById("result-area");
+  const current = getCurrentSelections();
+
+  if (!canAnalyzeNow(current)) {
+    if (showValidation) {
+      showValidationError(resultArea, { ...current, selectedGame });
+    }
+    return false;
+  }
+
+  const renderFinalResult = () => {
+    const result = analyzeCompatibility(
+      current.gpuKey,
+      current.cpuKey,
+      Number.parseInt(current.ramVal, 10),
+      selectedGame,
+      current.scalingEnabled,
+      current.gpuLabel,
+      current.cpuLabel
+    );
+    resultArea.classList.remove("hidden");
+    resultArea.innerHTML = renderResult(result);
+    hasRenderedResult = true;
+    if (smoothScroll) {
+      resultArea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  };
+
+  if (!withLoader) {
+    renderFinalResult();
+    return true;
+  }
+
+  resultArea.classList.remove("hidden");
+  resultArea.innerHTML = `
+    <div class="game-card rounded-2xl p-10 flex flex-col items-center justify-center gap-4">
+      <div class="loader"></div>
+      <p class="font-mono text-[#3a5a3a] text-sm">Analizando compatibilidad...</p>
+    </div>`;
+  setTimeout(renderFinalResult, 500);
+  return true;
+}
+
+function setupGameSearch() {
+  const input = document.getElementById("game-search");
+  const suggestions = document.getElementById("game-suggestions");
+  const chips = document.getElementById("game-chips");
+  if (!input || !suggestions || !chips) return;
+
+  const gameNames = [...gameCatalog];
+  chips.innerHTML = `<span class="text-[10px] font-mono text-[#2a4a2a] self-center mr-1">RÁPIDO:</span>`;
+
+  // Generar chips de acceso rápido
+  gameNames.slice(0, 8).forEach(name => {
+    const chip = document.createElement("button");
+    chip.className = "game-chip text-[10px] px-3 py-1.5 rounded-full transition-all";
+    chip.textContent = `${gamesData[name].emoji} ${name}`;
+    chip.dataset.game = name;
+    chip.addEventListener("click", () => {
+      selectGame(name);
+      chips.querySelectorAll(".game-chip").forEach(c => c.classList.remove("selected"));
+      chip.classList.add("selected");
+    });
+    chips.appendChild(chip);
+  });
+
+  // Búsqueda en tiempo real
+  input.addEventListener("input", () => {
+    const q = input.value.toLowerCase().trim();
+    if (!q) { suggestions.classList.add("hidden"); return; }
+
+    const matches = gameNames.filter(n => n.toLowerCase().includes(q));
+    if (matches.length === 0) { suggestions.classList.add("hidden"); return; }
+
+    suggestions.innerHTML = matches.map(n => `
+      <div class="suggestion-item px-4 py-3 text-sm flex items-center gap-2" data-game="${n}">
+        <span>${gamesData[n].emoji}</span><span>${n}</span>
+        <span class="ml-auto text-[10px] text-[#2a4a2a]">${gamesData[n].genre}</span>
+      </div>
+    `).join("");
+
+    suggestions.querySelectorAll(".suggestion-item").forEach(item => {
+      item.addEventListener("click", () => {
+        selectGame(item.dataset.game);
+        suggestions.classList.add("hidden");
+        // Actualizar chips
+        chips.querySelectorAll(".game-chip").forEach(c => {
+          c.classList.toggle("selected", c.dataset.game === item.dataset.game);
+        });
+      });
+    });
+
+    suggestions.classList.remove("hidden");
+  });
+
+  // Cerrar suggestions al clickear afuera
+  document.addEventListener("click", e => {
+    if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+      suggestions.classList.add("hidden");
+    }
+  });
+}
+
+function selectGame(name) {
+  selectedGame = name;
+  const input = document.getElementById("game-search");
+  if (input) input.value = name;
+  runAnalysis({ showValidation: false, withLoader: false, smoothScroll: false });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   8. BOTÓN ANALIZAR
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function setupAnalyzeButton() {
+  const btn = document.getElementById("btn-analyze");
+  const scalingToggle = document.getElementById("toggle-upscaling");
+
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    runAnalysis({ showValidation: true, withLoader: true, smoothScroll: true });
+  });
+
+  if (scalingToggle) {
+    scalingToggle.addEventListener("change", () => {
+      if (hasRenderedResult) {
+        runAnalysis({ showValidation: false, withLoader: false, smoothScroll: false });
+      }
+    });
+  }
+}
+
+function showValidationError(area, { gpuKey, cpuKey, ramVal, selectedGame }) {
+  const missing = [];
+  if (!gpuKey)       missing.push("GPU");
+  if (!cpuKey)       missing.push("CPU");
+  if (!ramVal)       missing.push("RAM");
+  if (!selectedGame) missing.push("Juego");
+
+  area.classList.remove("hidden");
+  area.innerHTML = `
+    <div class="game-card rounded-2xl p-6 border border-red-900/50">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">⚠️</span>
+        <div>
+          <div class="font-orbitron text-red-400 text-sm mb-1">CAMPOS INCOMPLETOS</div>
+          <div class="font-mono text-xs text-[#5a3a3a]">Seleccioná: <strong class="text-red-400">${missing.join(", ")}</strong> para continuar</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   9. INIT
+   ══════════════════════════════════════════════════════════════════════════ */
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadHardwareDatabase();
+  await loadGamesFromJson();
+  setupGameSearch();
+  setupAnalyzeButton();
+  renderFAQ();
+
+  // Animación de entrada del hero
+  const hero = document.querySelector("section");
+  if (hero) {
+    hero.style.opacity = "0";
+    hero.style.transform = "translateY(12px)";
+    requestAnimationFrame(() => {
+      hero.style.transition = "opacity 0.7s ease, transform 0.7s ease";
+      hero.style.opacity = "1";
+      hero.style.transform = "translateY(0)";
+    });
+  }
+});

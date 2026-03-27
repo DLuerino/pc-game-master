@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contacto | PC Game Master</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='50' font-size='48'%3E%F0%9F%96%A5%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { neon: '#39ff14', dark: '#080a08', darkCard: '#0d110d', darkBorder: '#1a2e1a' },
+          fontFamily: { orbitron: ['Orbitron', 'sans-serif'], mono: ['Share Tech Mono', 'monospace'], body: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #080a08; position: relative; font-family: 'Inter', sans-serif; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(57,255,20,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(57,255,20,0.03) 1px, transparent 1px);
+      background-size: 40px 40px; z-index: 0; pointer-events: none;
+    }
+    .neon-text { color: #39ff14; text-shadow: 0 0 8px rgba(57,255,20,0.5); }
+    .game-card { background: #0d110d; border: 1px solid #1a2e1a; }
+    .content-layer { position: relative; z-index: 2; }
+    details summary::-webkit-details-marker { display: none; }
+  </style>
+</head>
+<body class="min-h-screen text-gray-300">
+
+<div class="content-layer">
+  <header class="border-b border-[#1a2e1a] bg-[#080a08]/90 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <span class="font-orbitron font-black text-sm neon-text tracking-wider">PC GAME MASTER</span>
+      <nav class="flex items-center gap-6 text-xs font-mono text-[#4a6a4a]">
+        <a href="index.html" class="hover:text-neon transition-colors">← VOLVER AL VERIFICADOR</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-16">
+    <section class="game-card rounded-2xl p-8 md:p-12 shadow-2xl text-center mb-12">
+      <h1 class="font-orbitron font-black text-3xl mb-6 text-white uppercase tracking-tighter">Contacto <span class="text-neon">Oficial</span></h1>
+      <p class="text-[#7a9a7a] font-mono text-sm mb-8 italic">// Reporte de errores y feedback técnico vía GitHub</p>
+      
+      <a href="https://github.com/DLuerino" target="_blank" rel="noopener noreferrer" 
+         class="inline-block bg-neon text-black font-orbitron font-black px-8 py-4 rounded-xl hover:shadow-[0_0_20px_rgba(57,255,20,0.6)] transition-all">
+        Para reportar errores, sugerencias o feedback técnico, puedes hacerlo a través de mi perfil oficial en GitHub
+      </a>
+    </section>
+
+    <section class="space-y-4">
+      <h2 class="font-orbitron text-xl text-white mb-6">Preguntas Frecuentes</h2>
+      
+      <details class="group game-card rounded-lg p-4 cursor-pointer">
+        <summary class="list-none font-bold text-neon flex justify-between items-center">
+          ¿Cómo reporto un error?
+          <span class="group-open:rotate-90 transition-transform">▶</span>
+        </summary>
+        <p class="mt-4 text-sm text-[#7a9a7a] leading-relaxed">Puedes abrir un "Issue" en el repositorio de GitHub detallando tu hardware y el juego que falló.</p>
+      </details>
+
+      <details class="group game-card rounded-lg p-4 cursor-pointer">
+        <summary class="list-none font-bold text-neon flex justify-between items-center">
+          ¿Habrá versión móvil?
+          <span class="group-open:rotate-90 transition-transform">▶</span>
+        </summary>
+        <p class="mt-4 text-sm text-[#7a9a7a] leading-relaxed">La web es totalmente responsive, pero estamos evaluando una app nativa en el futuro.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer class="border-t border-[#1a2e1a] py-12 text-center">
+    <div class="flex justify-center gap-6 mb-4">
+      <a href="privacy.html" class="text-xs font-mono text-[#3a5a3a] hover:text-neon">Privacidad</a>
+      <a href="terms.html" class="text-xs font-mono text-[#3a5a3a] hover:text-neon">Términos</a>
+    </div>
+    <p class="text-[#2a4a2a] text-[10px] font-mono">
+      © <span class="year-update"></span> PC Game Master · Hecho con energía gamer
+    </p>
+  </footer>
+</div>
+
+<script>document.querySelectorAll('.year-update').forEach(el => el.textContent = new Date().getFullYear());</script>
+
+</body>
+</html>
