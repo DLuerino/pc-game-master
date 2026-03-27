@@ -16,7 +16,7 @@ let hardwareDatabase = { gpus: {}, cpus: {} };
 
 async function loadHardwareDatabase() {
   try {
-    const response = await fetch("src/js/hardware_db.json", { cache: "no-store" });
+    const response = await fetch("./src/js/hardware_db.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     if (!data?.gpus || !data?.cpus) throw new Error("Estructura inválida en hardware_db.json");
@@ -276,7 +276,7 @@ function parseGameProfileFromRequirements(record) {
 
 async function loadGamesFromJson() {
   try {
-    const response = await fetch("src/js/games_db.json", { cache: "no-store" });
+    const response = await fetch("./src/js/games_db.json", { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
     const records = await response.json();
