@@ -484,6 +484,7 @@ function analyzeCompatibility(gpuKey, cpuKey, ram, gameName, scalingEnabled, gpu
     fpsAverage,
     rawFps: Math.round(finalFps * 10) / 10,
     fsrMultiplier,
+    scalingEnabled,
     optimizationNote,
     engineOpt,
     cpuDep,
@@ -537,6 +538,11 @@ function renderResult(result) {
        </div>`
     : "";
 
+  const perfModeColor = result.scalingEnabled ? "#39ff14" : "#7a9a7a";
+  const perfModeText = result.scalingEnabled 
+    ? "MODO: ESCALADO ACTIVO (1.4x)" 
+    : "MODO: RESOLUCIÓN NATIVA";
+
   const fpsSection = `
     <div class="text-center">
         <div class="text-[10px] font-mono text-[#4a6a4a] mb-1 tracking-widest uppercase">FPS estimados · 1080p</div>
@@ -544,6 +550,7 @@ function renderResult(result) {
           ${result.fpsMin}<span class="text-2xl opacity-50">–</span>${result.fpsMax}
         </div>
         <div class="text-[#4a6a4a] font-mono text-xs mt-1">fotogramas por segundo</div>
+        <span id="performance-mode" class="inline-block mt-2 px-2 py-0.5 rounded text-[10px] font-mono tracking-wider" style="color: ${perfModeColor}; background: ${result.scalingEnabled ? 'rgba(57,255,20,0.1)' : 'rgba(122,154,122,0.1)'}; border: 1px solid ${perfModeColor}40;">${perfModeText}</span>
        </div>`;
 
   return `
