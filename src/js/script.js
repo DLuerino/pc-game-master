@@ -851,38 +851,61 @@ function generateReport() {
       const gameName = result.game.name;
       const fpsRange = `${result.fpsMin}-${result.fpsMax} FPS`;
       const perfMode = result.scalingEnabled ? "Escalado (FSR/DLSS)" : "Nativo";
+      const siteUrl = window.location.origin + window.location.pathname;
 
-      const shareText = `🏆 ¡Mirá mi Reporte de Misión para ${gameName}! Mis FPS: ${fpsRange}. Modo: ${perfMode}. Probá tu PC en: https://pcgamemaster.github.io/ #PCGameMaster #Gamer #Hardware #Build`;
+      const shareText = `🏆 ¡Mirá mi Reporte de Misión para ${gameName}! Mis FPS: ${fpsRange}. Probá tu PC acá:`;
+      const shareTags = `#PCGameMaster #Gamer #Hardware #Build`;
 
       const handleShare = (blob) => {
-        const canShare = navigator.canShare && navigator.canShare({
+        const shareData = {
+          title: 'PC Game Master Report',
+          text: `${shareText}\n${siteUrl}\n${shareTags}`,
+          url: siteUrl
+        };
+
+        const canShareFiles = navigator.canShare && navigator.canShare({
           files: [new File([blob], filename, { type: "image/png" })]
         });
 
-        if (canShare) {
-          navigator.share({
-            files: [new File([blob], filename, { type: "image/png" })],
-            title: `Mi Reporte: ${gameName}`,
-            text: shareText
-          }).catch(err => {
-            if (err.name !== "AbortError") {
-              console.error("Share failed:", err);
-              fallbackDownload(blob, filename);
+        const tryNativeShare = () => {
+          try {
+            if (canShareFiles) {
+              const shareWithFile = { ...shareData, files: [new File([blob], filename, { type: "image/png" })] };
+              navigator.share(shareWithFile).catch(err => {
+                if (err.name === "AbortError") return;
+                console.warn("Share with file failed, trying without:", err);
+                fallbackDownload(blob, filename, shareText, siteUrl, shareTags);
+              });
+            } else {
+              navigator.share(shareData).then(() => {
+                fallbackDownload(blob, filename, shareText, siteUrl, shareTags);
+              }).catch(err => {
+                if (err.name === "AbortError") return;
+                console.warn("Native share failed:", err);
+                fallbackDownload(blob, filename, shareText, siteUrl, shareTags);
+              });
             }
-          });
+          } catch (e) {
+            console.error("Share error:", e);
+            fallbackDownload(blob, filename, shareText, siteUrl, shareTags);
+          }
+        };
+
+        if (navigator.share && navigator.canShare) {
+          tryNativeShare();
         } else {
-          fallbackDownload(blob, filename);
+          fallbackDownload(blob, filename, shareText, siteUrl, shareTags);
         }
       };
 
-      const fallbackDownload = (blob, fname) => {
-        const url = URL.createObjectURL(blob);
+      const fallbackDownload = (blob, fname, text, url, tags) => {
+        const blobUrl = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.download = fname;
-        link.href = url;
+        link.href = blobUrl;
         link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-        showDownloadNotice(shareText);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        showDownloadNotice(text, url, tags);
       };
 
       canvas.toBlob(handleShare, "image/png");
@@ -894,7 +917,8 @@ function generateReport() {
   }, 100);
 }
 
-function showDownloadNotice(shareText) {
+function showDownloadNotice(shareText, siteUrl, shareTags) {
+  const fullText = `${shareText}\n${siteUrl}\n${shareTags}`;
   const notice = document.createElement("div");
   notice.id = "download-notice";
   notice.innerHTML = `
@@ -908,7 +932,7 @@ function showDownloadNotice(shareText) {
         ¡Imagen descargada! Copiá y compartí en tus redes:
       </div>
       <div style="background: #080a08; border: 1px solid #1a2e1a; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
-        <div id="share-text-display" style="color: #7a9a7a; font-size: 10px; line-height: 1.5; word-break: break-word;">${shareText}</div>
+        <div id="share-text-display" style="color: #7a9a7a; font-size: 10px; line-height: 1.5; word-break: break-word;">${fullText}</div>
       </div>
       <button onclick="copyShareText()" style="width: 100%; background: #39ff14; color: #000; border: none; border-radius: 6px; padding: 8px 16px; font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: bold; cursor: pointer;">
         📋 Copiar texto para compartir
@@ -916,7 +940,7 @@ function showDownloadNotice(shareText) {
     </div>
   `;
   document.body.appendChild(notice);
-  window._shareText = shareText;
+  window._shareText = fullText;
   setTimeout(() => {
     notice.style.transition = "opacity 0.3s ease";
     notice.style.opacity = "0";
