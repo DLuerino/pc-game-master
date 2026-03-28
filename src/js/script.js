@@ -401,15 +401,23 @@ function analyzeCompatibility(gpuKey, cpuKey, ram, gameName, scalingEnabled, gpu
   const warnings = [];
   
   const difficulty = game.difficulty || 5;
+  const engineOpt = game.engine_optimization || 1.0;
+  const cpuDep = game.cpu_dependency || 1.0;
   const minPtsNeeded = Math.round(difficulty * 10);
   
   if (gpu.benchmark < minPtsNeeded) issues.push(`GPU insuficiente: necesitás ${minPtsNeeded} pts, tenés ${gpu.benchmark} pts`);
   if (ram < game.minRam) issues.push(`RAM insuficiente (mínimo ${game.minRam} GB)`);
   if (gpu.vram < game.minVram) issues.push(`VRAM insuficiente (mínimo ${game.minVram} GB)`);
 
-  // Fórmula basada en difficulty:
-  // baseFps = (gpuPower / (difficulty * 1.5)) * 1.1
-  let baseFps = (gpu.benchmark / (difficulty * 1.5)) * 1.1;
+  // Fórmula con engine_optimization:
+  // baseFps = (gpuPower / (difficulty * 1.5)) * 1.1 * engine_optimization
+  const baseFps = (gpu.benchmark / (difficulty * 1.5)) * 1.1 * engineOpt;
+  
+  // Impacto de CPU según cpu_dependency:
+  // cpuImpact = (cpu.benchmark / gpu.benchmark) * cpu_dependency
+  // finalFps = baseFps * (0.7 + 0.3 * cpuImpact)
+  const cpuImpact = (cpu.benchmark / gpu.benchmark) * cpuDep;
+  let finalFps = baseFps * (0.7 + (0.3 * cpuImpact));
   
   // Aplicar FSR/DLSS: +40% si está habilitado
   let fsrMultiplier = 1.0;
@@ -419,8 +427,7 @@ function analyzeCompatibility(gpuKey, cpuKey, ram, gameName, scalingEnabled, gpu
     const techName = (gpu.name || "").toLowerCase().includes("rtx") ? "DLSS" : "FSR";
     optimizationNote = `${techName} activo (+40% FPS)`;
   }
-
-  let finalFps = baseFps * fsrMultiplier;
+  finalFps *= fsrMultiplier;
   
   // Penalización por VRAM insuficiente
   let vramPenaltyApplied = false;
@@ -478,6 +485,9 @@ function analyzeCompatibility(gpuKey, cpuKey, ram, gameName, scalingEnabled, gpu
     rawFps: Math.round(finalFps * 10) / 10,
     fsrMultiplier,
     optimizationNote,
+    engineOpt,
+    cpuDep,
+    cpuImpact: Math.round(cpuImpact * 100) / 100,
     bottleneckApplied,
     cpuGpuRatio: Math.round(cpuGpuRatio * 100),
     vramPenaltyApplied,

@@ -2,138 +2,192 @@
     {
         "name": "Terraria",
         "difficulty": 1,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<ul class=\"bb_ul\"><li><strong>SO:</strong> Windows XP / Vista / 7</li><li><strong>Procesador:</strong> 1.6 GHz</li><li><strong>Memoria:</strong> 512 MB de RAM</li><li><strong>Disco Duro:</strong> 200 MB de espacio libre</li><li><strong>Gráficos:</strong> Shader Model 1.1 con 128 MB de VRAM</li><li><strong>DirectX®:</strong> 9.0c o posterior</li></ul>",
         "rec_req": "<h2 class=\"bb_tag\"><strong>RECOMMENDED</strong></h2><ul class=\"bb_ul\"><li><strong>OS: Windows 7, 8/8.1, 10</strong></li><li><strong>Processor: Dual Core 3.0 Ghz</strong></li><li><strong>Memory: 4GB</strong></li><li><strong>Hard Disk Space: 200MB</strong></li><li><strong>Video Card: 256mb Video Memory, capable of Shader Model 2.0+</strong></li><li><strong>DirectX®: 9.0c or Greater</strong></li></ul>"
     },
     {
         "name": "Stardew Valley",
         "difficulty": 1,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows Vista or greater</li><li><strong>Procesador:</strong> 2 Ghz</li><li><strong>Memoria:</strong> 2 GB de RAM</li><li><strong>Gráficos:</strong> 256 mb video memory, shader model 3.0+</li><li><strong>DirectX:</strong> Versión 10</li><li><strong>Almacenamiento:</strong> 500 MB de espacio disponible</li></ul>",
         "rec_req": "No disponible"
     },
     {
         "name": "Rocket League",
         "difficulty": 2,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO *:</strong> Windows 7 (64 bit) or Newer (64 bit) Windows OS</li><li><strong>Procesador:</strong> 2.5 GHz Dual core</li><li><strong>Memoria:</strong> 4 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GeForce 760, AMD Radeon R7 270X, or better</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Red:</strong> Conexión de banda ancha a Internet</li><li><strong>Almacenamiento:</strong> 20 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO *:</strong> Windows 7 (64 bit) or Newer (64 bit) Windows OS</li><li><strong>Procesador:</strong> 3.0+ GHz Quad core</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GeForce GTX 1060, AMD Radeon RX 470, or better</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Red:</strong> Conexión de banda ancha a Internet</li><li><strong>Almacenamiento:</strong> 20 GB de espacio disponible</li><li><strong>Notas adicionales:</strong> Gamepad or Controller Recommended</li></ul>"
     },
     {
         "name": "Warframe",
         "difficulty": 2,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Minimum:</strong><br><ul class=\"bb_ul\"><li><strong>SO:</strong> Windows 7 de 64 bits (no compatible con 32 bits)</li><li><strong>Procesador:</strong> Intel Core i7 860, Intel Core i5 750 o AMD FX-4100 (compatibilidad requerida con SSE 4.2)</li><li><strong>Video:</strong> tarjeta gráfica compatible con DirectX 11+</li><li><strong>Memoria:</strong> 4 GB de RAM</li><li><strong>Almacenamiento:</strong> 50 GB de espacio disponible en HD</li><li><strong>Internet:</strong> conexión a Internet de banda ancha</li></ul>",
         "rec_req": "No disponible"
     },
     {
         "name": "Left 4 Dead 2",
         "difficulty": 2,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows® 7 32/64-bit / Vista 32/64 / XP</li><li><strong>Procesador:</strong> Pentium 4 3.0GHz</li><li><strong>Memoria:</strong> 2 GB de RAM</li><li><strong>Gráficos:</strong> Video card with 128 MB, Shader model 2.0. ATI X800, NVidia 6600 or better</li><li><strong>DirectX:</strong> Versión 9.0c</li><li><strong>Almacenamiento:</strong> 13 GB de espacio disponible</li><li><strong>Tarjeta de sonido:</strong> DirectX 9.0c compatible sound card</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows® 7 32/64-bit / Vista 32/64 / XP</li><li><strong>Procesador:</strong> Intel core 2 duo 2.4GHz</li><li><strong>Memoria:</strong> 2 GB de RAM</li><li><strong>Gráficos:</strong> Video Card Shader model 3.0. NVidia 7600, ATI X1600 or better</li><li><strong>DirectX:</strong> Versión 9.0c</li><li><strong>Almacenamiento:</strong> 13 GB de espacio disponible</li><li><strong>Tarjeta de sonido:</strong> DirectX 9.0c compatible sound card</li></ul>"
     },
     {
         "name": "Counter-Strike 2",
         "difficulty": 3,
+        "cpu_dependency": 1.7,
+        "engine_optimization": 1.1,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO:</strong> Windows® 10.</li><li><strong>Procesador:</strong> CPU de 4 subprocesos - Intel® Core™ i5 750 o superior.</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> La tarjeta gráfica de ser de al menos 1 GB y debe ser compatible con DirectX 11 y Shader Model 5.0.</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Almacenamiento:</strong> 85 GB de espacio disponible</li></ul>",
         "rec_req": "No disponible"
     },
     {
         "name": "Dota 2",
         "difficulty": 3,
+        "cpu_dependency": 1.8,
+        "engine_optimization": 1.1,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows 7 o posterior</li><li><strong>Procesador:</strong> Intel o AMD de doble núcleo a 2,8 GHz</li><li><strong>Memoria:</strong> 4 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GeForce 8600/9600GT, ATI/AMD Radeon HD2600/3600</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Red:</strong> Conexión de banda ancha a Internet</li><li><strong>Almacenamiento:</strong> 60 GB de espacio disponible</li><li><strong>Tarjeta de sonido:</strong> Compatible con DirectX</li></ul>",
         "rec_req": "No disponible"
     },
     {
         "name": "DARK SOULS™ II",
         "difficulty": 4,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows Vista SP2, Windows 7 SP1, Windows 8</li><li><strong>Procesador:</strong> AMD® Phenom II™ X2 555 3.2Ghz or Intel® Pentium Core ™ 2 Duo E8500 3.17Ghz</li><li><strong>Memoria:</strong> 2 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA® GeForce® 9600GT, ATI Radeon™ HD 5870</li><li><strong>DirectX:</strong> Versión 9.0c</li><li><strong>Red:</strong> Conexión de banda ancha a Internet</li><li><strong>Almacenamiento:</strong> 12 GB de espacio disponible</li><li><strong>Tarjeta de sonido:</strong> DirectX 9 sound device</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows 7 SP1, Windows 8</li><li><strong>Procesador:</strong> Intel® CoreTM i3 2100 3.10GHz or AMD® A8 3870K 3.0GHz</li><li><strong>Memoria:</strong> 4 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA® GeForce® GTX 750 or ATI Radeon™ HD 6870 or higher</li><li><strong>DirectX:</strong> Versión 9.0c</li><li><strong>Red:</strong> Conexión de banda ancha a Internet</li><li><strong>Almacenamiento:</strong> 15 GB de espacio disponible</li><li><strong>Tarjeta de sonido:</strong> DirectX 9 sound device</li></ul>"
     },
     {
         "name": "DARK SOULS™ III",
         "difficulty": 5,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows 7 SP1 64bit, Windows 8.1 64bit Windows 10 64bit</li><li><strong>Procesador:</strong> Intel Core i3-2100 / AMD® FX-6300</li><li><strong>Memoria:</strong> 4 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA® GeForce GTX 750 Ti / ATI Radeon HD 7950</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Red:</strong> Conexión de banda ancha a Internet</li><li><strong>Almacenamiento:</strong> 25 GB de espacio disponible</li><li><strong>Tarjeta de sonido:</strong> DirectX 11 sound device</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows 7 SP1 64bit, Windows 8.1 64bit Windows 10 64bit</li><li><strong>Procesador:</strong> Intel Core i7-3770 / AMD® FX-8350</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA® GeForce GTX 970 / ATI Radeon R9 series</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Red:</strong> Conexión de banda ancha a Internet</li><li><strong>Almacenamiento:</strong> 25 GB de espacio disponible</li><li><strong>Tarjeta de sonido:</strong> DirectX 11 sound device</li></ul>"
     },
     {
         "name": "Fortnite",
         "difficulty": 5,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO:</strong> Windows 10/11 (64-bit)</li><li><strong>Procesador:</strong> Intel Core i3-3225 3.3 GHz / AMD equivalente</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> Intel HD 4000</li><li><strong>DirectX:</strong> Versión 11</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel Core i5-10400F / AMD Ryzen 5 5600</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> GTX 1660 / RX 580 o superior</li><li><strong>DirectX:</strong> Versión 12</li></ul>"
     },
     {
         "name": "Grand Theft Auto V Legacy",
         "difficulty": 5,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows 10 de 64 bits</li><li><strong>Procesador:</strong> Intel Core 2 Quad CPU Q6600 a 2,4 GHz / AMD Phenom 9850 Quad-Core a 2,5 GHz</li><li><strong>Memoria:</strong> 4 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA 9800 GT 1 GB / AMD HD 4870 1 GB</li><li><strong>Almacenamiento:</strong> 125 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel Core i5 3470 a 3,2 GHz / AMD X8 FX-8350 a 4 GHz</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GTX 660 2 GB / AMD HD7870 2 GB</li><li><strong>Almacenamiento:</strong> 125 GB de espacio disponible</li></ul>"
     },
     {
         "name": "The Witcher 3: Wild Hunt",
         "difficulty": 5,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> 64-bit Windows 7, 64-bit Windows 8 (8.1)</li><li><strong>Procesador:</strong> Intel CPU Core i5-2500K 3.3GHz / AMD A10-5800K APU (3.8GHz)</li><li><strong>Memoria:</strong> 6 GB de RAM</li><li><strong>Gráficos:</strong> Nvidia GPU GeForce GTX 660 / AMD GPU Radeon HD 7870</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Almacenamiento:</strong> 50 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>SO:</strong> 64-bit Windows 10/11</li><li><strong>Procesador:</strong> Intel Core i5-7400 / Ryzen 5 1600</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> Nvidia GTX 1070 / Radeon RX 480</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 50 GB de espacio disponible</li></ul>"
     },
     {
         "name": "MONSTER HUNTER RISE",
         "difficulty": 5,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows 10 (64-bit)</li><li><strong>Procesador:</strong> Intel® Core™ i3-4130 or Core™ i5-3470 or AMD FX™-6100</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA® GeForce® GT 1030 (DDR4) or AMD Radeon™ RX 550</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 36 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel® Core™ i5-4460 or AMD FX™-8300</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA® GeForce® GTX 1060 / AMD Radeon™ RX 570</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 36 GB de espacio disponible</li></ul>"
     },
     {
         "name": "Elden Ring",
         "difficulty": 7,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows 10</li><li><strong>Procesador:</strong> INTEL CORE I5-8400 or AMD RYZEN 3 3300X</li><li><strong>Memoria:</strong> 12 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GEFORCE GTX 1060 3 GB or AMD RADEON RX 580 4 GB</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 60 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> INTEL CORE I7-8700K or AMD RYZEN 5 3600X</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GEFORCE GTX 1070 8 GB or AMD RADEON RX VEGA 56 8 GB</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 60 GB de espacio disponible</li></ul>"
     },
     {
         "name": "Rust",
         "difficulty": 6,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows 11 64bit</li><li><strong>Procesador:</strong> AMD Ryzen 5 1400 or Intel Core i5-6600</li><li><strong>Memoria:</strong> 12 GB de RAM</li><li><strong>Gráficos:</strong> AMD Radeon RX 470, NVIDIA GeForce GTX 1060, Intel® Arc™ A580</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Almacenamiento:</strong> 45 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> AMD Ryzen 7 3700X or Intel® Core i7-6700K</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> AMD Radeon RX 6600XT, NVIDIA GeForce RTX 3060, Intel Arc B580</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 45 GB de espacio disponible</li></ul>"
     },
     {
         "name": "ARK: Survival Evolved",
         "difficulty": 7,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO *:</strong> Windows 7/8.1/10 (64-bit versions)</li><li><strong>Procesador:</strong> Intel Core i5-2400/AMD FX-8320 or better</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GTX 670 2GB/AMD Radeon HD 7870 2GB or better</li><li><strong>DirectX:</strong> Versión 10</li><li><strong>Almacenamiento:</strong> 60 GB de espacio disponible</li></ul>",
         "rec_req": "No disponible"
     },
     {
         "name": "Palworld",
         "difficulty": 7,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows 10 or later (64-Bit)</li><li><strong>Procesador:</strong> i5-3570K 3.4 GHz 4 Core</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> GeForce GTX 1050 (2GB)</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Almacenamiento:</strong> 40 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> i9-9900K 3.6 GHz 8 Core</li><li><strong>Memoria:</strong> 32 GB de RAM</li><li><strong>Gráficos:</strong> GeForce RTX 2070</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 40 GB de espacio disponible</li></ul>"
     },
     {
         "name": "Warzone",
         "difficulty": 7,
+        "cpu_dependency": 1.9,
+        "engine_optimization": 1.2,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO:</strong> Windows 10/11 64-bit</li><li><strong>Procesador:</strong> Intel Core i3-9100 / AMD Ryzen 5 3600</li><li><strong>Memoria:</strong> 12 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GTX 960 / AMD Radeon RX 580</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 125 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel Core i7-10700 / AMD Ryzen 7 5800X</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA RTX 3060 Ti / AMD RX 6700 XT</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 125 GB SSD</li></ul>"
     },
     {
         "name": "Baldur's Gate 3",
         "difficulty": 7,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows 10 64-bit</li><li><strong>Procesador:</strong> Intel I5 4690 / AMD FX 8350 / Snapdragon X Elite</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> Nvidia GTX 970 / RX 480 / Intel Arc A380</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Almacenamiento:</strong> 150 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel i7 8700K / AMD r5 3600</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> Nvidia 2060 Super / RX 5700 XT / Intel Arc A580</li><li><strong>DirectX:</strong> Versión 11</li><li><strong>Almacenamiento:</strong> 150 GB SSD</li></ul>"
     },
     {
         "name": "Red Dead Redemption 2",
         "difficulty": 8,
+        "cpu_dependency": 1.1,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows 10 - 64-bit</li><li><strong>Procesador:</strong> Intel® Core™ i5-2500K / AMD FX-6300</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> Nvidia GeForce GTX 770 2GB / AMD Radeon R9 280 3GB</li><li><strong>Almacenamiento:</strong> 150 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel® Core™ i7-4770K / AMD Ryzen 5 1500X</li><li><strong>Memoria:</strong> 12 GB de RAM</li><li><strong>Gráficos:</strong> Nvidia GeForce GTX 1060 6GB / AMD Radeon RX 480 4GB</li><li><strong>Almacenamiento:</strong> 150 GB SSD</li></ul>"
     },
     {
         "name": "Call of Duty®",
         "difficulty": 8,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> Windows® 10 64 Bit (última actualización)</li><li><strong>Procesador:</strong> AMD Ryzen™ 5 1400 o Intel® Core™ i5-6600</li><li><strong>Memoria:</strong> 8 GB de RAM</li><li><strong>Gráficos:</strong> AMD Radeon™ RX 470, NVIDIA® GeForce® GTX 970 / 1060 o Intel® Arc™ A580</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 161 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> AMD Ryzen™ 5 1600X o Intel® Core™ i7-6700K</li><li><strong>Memoria:</strong> 12 GB de RAM</li><li><strong>Gráficos:</strong> AMD Radeon™ RX 6600XT o NVIDIA® GeForce® RTX 3060 o Intel® Arc™ B580</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 161 GB SSD</li></ul>"
     },
     {
         "name": "Cyberpunk 2077",
         "difficulty": 9,
+        "cpu_dependency": 0.8,
+        "engine_optimization": 0.85,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li>Requiere un procesador y un sistema operativo de 64 bits</li><li><strong>SO:</strong> 64-bit Windows 10</li><li><strong>Procesador:</strong> Core i7-6700 or Ryzen 5 1600</li><li><strong>Memoria:</strong> 12 GB de RAM</li><li><strong>Gráficos:</strong> GeForce GTX 1060 6GB or Radeon RX 580 8GB or Arc A380</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 70 GB de espacio disponible</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Core i7-12700 or Ryzen 7 7800X3D</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> GeForce RTX 2060 SUPER or Radeon RX 5700 XT or Arc A770</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 70 GB SSD</li></ul>"
     },
     {
+        "name": "Starfield",
+        "difficulty": 9,
+        "cpu_dependency": 1.4,
+        "engine_optimization": 0.7,
+        "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO:</strong> Windows 10 version 22H2</li><li><strong>Procesador:</strong> Intel Core i7-7800X / AMD Ryzen 5 2600X</li><li><strong>Memoria:</strong> 16 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA GTX 1070 Ti / AMD RX 5700</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 125 GB SSD</li></ul>",
+        "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel Core i7-12700K / AMD Ryzen 7 5800X</li><li><strong>Memoria:</strong> 32 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA RTX 3080 / AMD RX 6800 XT</li><li><strong>DirectX:</strong> Versión 12</li><li><strong>Almacenamiento:</strong> 125 GB NVMe SSD</li></ul>"
+    },
+    {
         "name": "Crimson Desert",
         "difficulty": 10,
+        "cpu_dependency": 1.0,
+        "engine_optimization": 1.0,
         "min_req": "<strong>Mínimo:</strong><br><ul class=\"bb_ul\"><li><strong>SO:</strong> Windows 11 64-bit</li><li><strong>Procesador:</strong> Intel Core i7-12700K / AMD Ryzen 7 5800X</li><li><strong>Memoria:</strong> 32 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA RTX 3080 / AMD RX 6800 XT (12GB+ VRAM)</li><li><strong>DirectX:</strong> Versión 12 Ultimate</li><li><strong>Almacenamiento:</strong> 150 GB SSD</li></ul>",
         "rec_req": "<strong>Recomendado:</strong><br><ul class=\"bb_ul\"><li><strong>Procesador:</strong> Intel Core i9-14900K / AMD Ryzen 9 7950X</li><li><strong>Memoria:</strong> 64 GB de RAM</li><li><strong>Gráficos:</strong> NVIDIA RTX 4090 / AMD RX 7900 XTX (24GB VRAM)</li><li><strong>DirectX:</strong> Versión 12 Ultimate</li><li><strong>Almacenamiento:</strong> 150 GB NVMe SSD</li></ul>"
     }
