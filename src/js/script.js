@@ -841,13 +841,18 @@ function generateReport() {
   setTimeout(() => {
     html2canvas(template, {
       backgroundColor: "#080a08",
-      scale: 2,
+      scale: 3,
       useCORS: true,
       logging: false
     }).then(canvas => {
       template.classList.add("hidden");
 
       const filename = `PC-Master-Report-${result.game.name.replace(/\s+/g, "-")}.png`;
+      const gameName = result.game.name;
+      const fpsRange = `${result.fpsMin}-${result.fpsMax} FPS`;
+      const perfMode = result.scalingEnabled ? "Escalado (FSR/DLSS)" : "Nativo";
+
+      const shareText = `🏆 ¡Mirá mi Reporte de Misión para ${gameName}! Mis FPS: ${fpsRange}. Modo: ${perfMode}. Probá tu PC en: https://pcgamemaster.github.io/ #PCGameMaster #Gamer #Hardware #Build`;
 
       const handleShare = (blob) => {
         const canShare = navigator.canShare && navigator.canShare({
@@ -857,8 +862,8 @@ function generateReport() {
         if (canShare) {
           navigator.share({
             files: [new File([blob], filename, { type: "image/png" })],
-            title: "Mi PC Master Report",
-            text: "¡Mirá cómo corre el juego en mi PC!"
+            title: `Mi Reporte: ${gameName}`,
+            text: shareText
           }).catch(err => {
             if (err.name !== "AbortError") {
               console.error("Share failed:", err);
@@ -877,7 +882,7 @@ function generateReport() {
         link.href = url;
         link.click();
         setTimeout(() => URL.revokeObjectURL(url), 100);
-        showDownloadNotice();
+        showDownloadNotice(shareText);
       };
 
       canvas.toBlob(handleShare, "image/png");
@@ -889,27 +894,60 @@ function generateReport() {
   }, 100);
 }
 
-function showDownloadNotice() {
+function showDownloadNotice(shareText) {
   const notice = document.createElement("div");
   notice.id = "download-notice";
   notice.innerHTML = `
     <div style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; 
-         background: #0d110d; border: 1px solid #39ff14; border-radius: 12px; padding: 14px 24px;
-         box-shadow: 0 0 30px rgba(57,255,20,0.3); font-family: 'Share Tech Mono', monospace;">
-      <div style="color: #39ff14; font-size: 13px; display: flex; align-items: center; gap: 10px;">
+         background: #0d110d; border: 1px solid #39ff14; border-radius: 12px; padding: 14px 20px;
+         box-shadow: 0 0 30px rgba(57,255,20,0.3); font-family: 'Share Tech Mono', monospace; max-width: 90vw;">
+      <div style="color: #39ff14; font-size: 12px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#39ff14" stroke-width="2">
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
-        Imagen descargada, ¡ya podés compartirla!
+        ¡Imagen descargada! Copiá y compartí en tus redes:
       </div>
+      <div style="background: #080a08; border: 1px solid #1a2e1a; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+        <div id="share-text-display" style="color: #7a9a7a; font-size: 10px; line-height: 1.5; word-break: break-word;">${shareText}</div>
+      </div>
+      <button onclick="copyShareText()" style="width: 100%; background: #39ff14; color: #000; border: none; border-radius: 6px; padding: 8px 16px; font-family: 'Share Tech Mono', monospace; font-size: 11px; font-weight: bold; cursor: pointer;">
+        📋 Copiar texto para compartir
+      </button>
     </div>
   `;
   document.body.appendChild(notice);
+  window._shareText = shareText;
   setTimeout(() => {
     notice.style.transition = "opacity 0.3s ease";
     notice.style.opacity = "0";
-    setTimeout(() => notice.remove(), 300);
-  }, 3000);
+    setTimeout(() => notice.remove(), 4000);
+  }, 4000);
+}
+
+function copyShareText() {
+  const text = window._shareText || "";
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('[onclick="copyShareText()"]');
+    if (btn) {
+      btn.textContent = "✓ ¡Copiado!";
+      btn.style.background = "#22c55e";
+      setTimeout(() => {
+        btn.textContent = "📋 Copiar texto para compartir";
+        btn.style.background = "#39ff14";
+      }, 2000);
+    }
+  }).catch(() => {
+    const display = document.getElementById("share-text-display");
+    if (display) {
+      const range = document.createRange();
+      range.selectNodeContents(display);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      document.execCommand("copy");
+      sel.removeAllRanges();
+    }
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
