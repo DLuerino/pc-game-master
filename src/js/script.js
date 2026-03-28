@@ -631,14 +631,6 @@ function renderResult(result) {
         <!-- Tips según el resultado -->
         ${renderTips(result)}
 
-        <!-- Share Card Button -->
-        <div class="border-t border-[#1a2e1a] pt-5 mt-4">
-          <button id="btn-generate-report" onclick="generateReport()" class="w-full py-3 px-4 rounded-xl font-mono text-sm tracking-wider transition-all duration-200 flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #0d110d 0%, #1a2e1a 100%); border: 1px solid #39ff14; color: #39ff14;" onmouseover="this.style.boxShadow='0 0 20px rgba(57,255,20,0.4)'" onmouseout="this.style.boxShadow='none'">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-            📸 Generar Ficha Técnica
-          </button>
-        </div>
-
       </div>
     </div>
   `;
@@ -690,6 +682,12 @@ function renderCommunityTips(result) {
           <span>Reportar mis FPS Reales</span>
         </a>
         <p class="text-[11px] sm:text-xs font-mono text-[#5f7f5f]">Ayúdanos a calibrar el motor para Latinoamérica</p>
+      </div>
+      <div class="mt-4">
+        <button id="btn-generate-report" onclick="generateReport()" class="w-full py-3 px-4 rounded-xl font-mono text-sm tracking-wider transition-all duration-200 flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #0d110d 0%, #1a2e1a 100%); border: 1px solid #39ff14; color: #39ff14;" onmouseover="this.style.boxShadow='0 0 20px rgba(57,255,20,0.4)'" onmouseout="this.style.boxShadow='none'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          📸 Generar Ficha Técnica
+        </button>
       </div>
     </div>
   `;
@@ -848,16 +846,70 @@ function generateReport() {
       logging: false
     }).then(canvas => {
       template.classList.add("hidden");
-      const link = document.createElement("a");
-      link.download = `PC-Master-Report-${result.game.name.replace(/\s+/g, "-")}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+
+      const filename = `PC-Master-Report-${result.game.name.replace(/\s+/g, "-")}.png`;
+
+      const handleShare = (blob) => {
+        const canShare = navigator.canShare && navigator.canShare({
+          files: [new File([blob], filename, { type: "image/png" })]
+        });
+
+        if (canShare) {
+          navigator.share({
+            files: [new File([blob], filename, { type: "image/png" })],
+            title: "Mi PC Master Report",
+            text: "¡Mirá cómo corre el juego en mi PC!"
+          }).catch(err => {
+            if (err.name !== "AbortError") {
+              console.error("Share failed:", err);
+              fallbackDownload(blob, filename);
+            }
+          });
+        } else {
+          fallbackDownload(blob, filename);
+        }
+      };
+
+      const fallbackDownload = (blob, fname) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = fname;
+        link.href = url;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        showDownloadNotice();
+      };
+
+      canvas.toBlob(handleShare, "image/png");
     }).catch(err => {
       template.classList.add("hidden");
       console.error("Error generating report:", err);
       alert("Error al generar la ficha técnica.");
     });
   }, 100);
+}
+
+function showDownloadNotice() {
+  const notice = document.createElement("div");
+  notice.id = "download-notice";
+  notice.innerHTML = `
+    <div style="position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; 
+         background: #0d110d; border: 1px solid #39ff14; border-radius: 12px; padding: 14px 24px;
+         box-shadow: 0 0 30px rgba(57,255,20,0.3); font-family: 'Share Tech Mono', monospace;">
+      <div style="color: #39ff14; font-size: 13px; display: flex; align-items: center; gap: 10px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#39ff14" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        Imagen descargada, ¡ya podés compartirla!
+      </div>
+    </div>
+  `;
+  document.body.appendChild(notice);
+  setTimeout(() => {
+    notice.style.transition = "opacity 0.3s ease";
+    notice.style.opacity = "0";
+    setTimeout(() => notice.remove(), 300);
+  }, 3000);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
