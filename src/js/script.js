@@ -113,12 +113,10 @@ function getCpuData(cpuKey, cpuLabel = "") {
      name: string,
      genre: string,
      year: number,
+     emoji: string,
      minRam: number,
      minVram: number,
-     minGpuScore: number,       // benchmark relativo 0-1000
-     minCpuScore: number,       // benchmark relativo 0-1000
-     minCombinedScore: number,  // umbral de rendimiento global
-     optimizationMultiplier: number, // factor de optimización del juego
+     difficulty: number,        // 1-10 (escala de dificultad)
    }
    ══════════════════════════════════════════════════════════════════════════ */
 
@@ -130,10 +128,7 @@ const baseGamesData = {
     emoji: "👹",
     minRam: 8,
     minVram: 4,
-    minGpuScore: 260,
-    minCpuScore: 300,
-    minCombinedScore: 280,
-    optimizationMultiplier: 1.15,
+    difficulty: 6,
   },
 
   "Cyberpunk 2077": {
@@ -143,10 +138,7 @@ const baseGamesData = {
     emoji: "🌃",
     minRam: 12,
     minVram: 6,
-    minGpuScore: 340,
-    minCpuScore: 420,
-    minCombinedScore: 430,
-    optimizationMultiplier: 0.62,
+    difficulty: 9,
   },
 
   "Elden Ring": {
@@ -156,10 +148,7 @@ const baseGamesData = {
     emoji: "⚔️",
     minRam: 12,
     minVram: 4,
-    minGpuScore: 280,
-    minCpuScore: 360,
-    minCombinedScore: 360,
-    optimizationMultiplier: 0.92,
+    difficulty: 7,
   },
 
   "World of Warcraft": {
@@ -169,10 +158,7 @@ const baseGamesData = {
     emoji: "🐉",
     minRam: 8,
     minVram: 2,
-    minGpuScore: 180,
-    minCpuScore: 260,
-    minCombinedScore: 220,
-    optimizationMultiplier: 1.8,
+    difficulty: 2,
   },
 
   "League of Legends": {
@@ -182,9 +168,7 @@ const baseGamesData = {
     emoji: "🏆",
     minRam: 4,
     minVram: 1,
-    minGpuScore: 130,
-    minCpuScore: 200,
-    minCombinedScore: 170,
+    difficulty: 2,
     optimizationMultiplier: 2.55,
   },
 
@@ -195,13 +179,10 @@ const baseGamesData = {
     emoji: "🎯",
     minRam: 8,
     minVram: 2,
-    minGpuScore: 170,
-    minCpuScore: 260,
-    minCombinedScore: 240,
-    optimizationMultiplier: 2.85,
+    difficulty: 3,
   },
 
-  /* ── AGREGA MÁS JUEGOS AQUÍ — copia el bloque de arriba y modificalo ── */
+  /* ── AGREGA MÁS JUEGOS AQUÍ — usa difficulty: 1-10 ── */
 };
 
 let gamesData = { ...baseGamesData };
@@ -256,10 +237,6 @@ function parseGameProfileFromRequirements(record) {
   const graphicsSection = ((record.min_req || "").match(/(gr[aá]ficos|video)[^<]*<\/li>/i) || [record.min_req || ""])[0];
   const minVram = clamp(parseFirstNumber(/(\d+)\s*GB/i, graphicsSection, 4), 1, 16);
 
-  const minGpuScore = clamp(160 + minVram * 38, 120, 760);
-  const minCpuScore = clamp(180 + minRam * 20, 180, 820);
-  const minCombinedScore = clamp(Math.round(minGpuScore * 0.7 + minCpuScore * 0.3), 160, 780);
-
   return {
     name: record.name,
     genre: "Juego de PC",
@@ -267,10 +244,7 @@ function parseGameProfileFromRequirements(record) {
     emoji: inferEmoji(record.name),
     minRam,
     minVram,
-    minGpuScore,
-    minCpuScore,
-    minCombinedScore,
-    optimizationMultiplier: getOptimizationMultiplierByName(record.name),
+    difficulty: record.difficulty || 5,
   };
 }
 
@@ -424,73 +398,95 @@ function analyzeCompatibility(gpuKey, cpuKey, ram, gameName, scalingEnabled, gpu
   if (!gpu || !cpu || !game) return null;
 
   const issues = [];
-  if (gpu.benchmark < game.minGpuScore) issues.push(`GPU por debajo del mínimo recomendado para ${game.name}`);
-  if (cpu.benchmark < game.minCpuScore) issues.push(`CPU por debajo del mínimo recomendado para ${game.name}`);
+  const warnings = [];
+  
+  const difficulty = game.difficulty || 5;
+  const minPtsNeeded = Math.round(difficulty * 10);
+  
+  if (gpu.benchmark < minPtsNeeded) issues.push(`GPU insuficiente: necesitás ${minPtsNeeded} pts, tenés ${gpu.benchmark} pts`);
   if (ram < game.minRam) issues.push(`RAM insuficiente (mínimo ${game.minRam} GB)`);
   if (gpu.vram < game.minVram) issues.push(`VRAM insuficiente (mínimo ${game.minVram} GB)`);
 
-  // Fórmula benchmark relativo:
-  // (Puntaje_GPU * 0.7 + Puntaje_CPU * 0.3) * Multiplicador_Optimización_Juego
-  let performanceScore = (gpu.benchmark * 0.7 + cpu.benchmark * 0.3) * (game.optimizationMultiplier || 1);
-
-  // eSports: prioriza CPU y favorece FPS altos en gama media/alta
-  const esports = isEsportsGame(game.name);
-  if (esports) {
-    const cpuHeadroom = clamp(cpu.benchmark / 1000, 0.3, 1.1);
-    performanceScore *= (1 + cpuHeadroom * 0.28);
-  }
-
-  // Multiplicadores por tecnologías de escalado (simulación DLSS/FSR)
+  // Fórmula basada en difficulty:
+  // baseFps = (gpuPower / (difficulty * 1.5)) * 1.1
+  let baseFps = (gpu.benchmark / (difficulty * 1.5)) * 1.1;
+  
+  // Aplicar FSR/DLSS: +40% si está habilitado
+  let fsrMultiplier = 1.0;
   let optimizationNote = "";
   if (scalingEnabled) {
-    const upscaleFactor = getGpuUpscalingFactor(gpu);
-    if (upscaleFactor >= 1.6) {
-      performanceScore *= 1.6;
-      optimizationNote = "Resultado optimizado mediante DLSS";
-    } else {
-      performanceScore *= 1.4;
-      optimizationNote = "Resultado optimizado mediante FSR";
-    }
+    fsrMultiplier = 1.4;
+    const techName = (gpu.name || "").toLowerCase().includes("rtx") ? "DLSS" : "FSR";
+    optimizationNote = `${techName} activo (+40% FPS)`;
   }
 
-  // Penalización severa por VRAM insuficiente (stuttering)
+  let finalFps = baseFps * fsrMultiplier;
+  
+  // Penalización por VRAM insuficiente
   let vramPenaltyApplied = false;
   if (gpu.vram < game.minVram) {
-    performanceScore *= 0.6;
+    finalFps *= 0.70;
     vramPenaltyApplied = true;
+    warnings.push("VRAM insuficiente: stuttering esperado");
   }
 
+  // Penalización por RAM borderline
   let ramPenaltyApplied = false;
-  if (ram < game.minRam + 4) {
-    performanceScore *= 0.9;
+  if (ram < game.minRam) {
+    finalFps *= 0.80;
     ramPenaltyApplied = true;
+  } else if (ram < game.minRam + 4) {
+    finalFps *= 0.92;
+    warnings.push("RAM borderline - posible stuttering");
   }
 
-  const fpsAverage = clamp(Math.round(performanceScore / 8), 15, 360);
-  const fpsMin = Math.round(fpsAverage * 0.82);
-  const fpsMax = Math.round(fpsAverage * 1.18);
+  // CPU Bottleneck: si CPU < GPU, Hard Cap en 100 FPS
+  let bottleneckApplied = false;
+  const cpuGpuRatio = cpu.benchmark / gpu.benchmark;
+  if (cpuGpuRatio < 1.0) {
+    bottleneckApplied = true;
+    finalFps = Math.min(finalFps, 100);
+    warnings.push(`CPU Bottleneck: CPU al ${Math.round(cpuGpuRatio * 100)}% de GPU (Hard Cap: 100 FPS)`);
+  }
 
+  const fpsAverage = clamp(Math.round(finalFps), 10, 200);
+  const fpsMin = clamp(Math.round(fpsAverage * 0.85), 10, 200);
+  const fpsMax = clamp(Math.round(fpsAverage * 1.15), 10, 200);
+
+  // Determinación de TIER basada en FPS:
+  // > 60: Calidad Alta (Verde)
+  // 30-60: Calidad Media (Amarillo)
+  // < 30: Calidad Baja (Rojo)
   let tier = "LOW";
-  if (performanceScore < game.minCombinedScore * 0.75) tier = "NO_CORRE";
-  else if (fpsMax >= 140) tier = "ULTRA";
-  else if (fpsMax >= 90) tier = "HIGH";
-  else if (fpsMax >= 55) tier = "MEDIUM";
+  if (finalFps > 60) {
+    tier = "HIGH";
+  } else if (finalFps >= 30) {
+    tier = "MEDIUM";
+  } else {
+    tier = "LOW";
+  }
 
-  const monitorNote = fpsMax > 60 ? "Rendimiento ideal para tu monitor de 60Hz" : "";
+  const monitorNotes = [];
+  if (fpsMax > 60) monitorNotes.push("Rendimiento ideal para 60Hz+");
+  if (fpsMax >= 144) monitorNotes.push("Perfecto para 144Hz+");
 
   return {
     tier,
     fpsMin,
     fpsMax,
-    cpuPenaltyApplied: cpu.benchmark < game.minCpuScore,
-    ramPenaltyApplied,
-    vramPenaltyApplied,
+    fpsAverage,
+    rawFps: Math.round(finalFps * 10) / 10,
+    fsrMultiplier,
     optimizationNote,
-    monitorNote,
-    performanceScore: Math.round(performanceScore),
-    optimizationMultiplier: game.optimizationMultiplier || 1,
-    issues: issues,
+    bottleneckApplied,
+    cpuGpuRatio: Math.round(cpuGpuRatio * 100),
+    vramPenaltyApplied,
+    ramPenaltyApplied,
+    difficulty,
+    warnings,
+    monitorNotes,
     gpu, cpu, ram, game,
+    issues,
   };
 }
 
@@ -499,14 +495,12 @@ function analyzeCompatibility(gpuKey, cpuKey, ram, gameName, scalingEnabled, gpu
    ══════════════════════════════════════════════════════════════════════════ */
 
 const tierLabels = {
-  NO_CORRE: { label: "NO COMPATIBLE",   emoji: "💀", desc: "Tu PC no cumple los requisitos mínimos" },
-  LOW:      { label: "CALIDAD BAJA",    emoji: "⚠️", desc: "Requiere ajustar configuración gráfica a baja" },
-  MEDIUM:   { label: "CALIDAD MEDIA",   emoji: "✅", desc: "Corre fluido en calidad media/alta en 1080p" },
-  HIGH:     { label: "CALIDAD ALTA",    emoji: "🔥", desc: "Excelente rendimiento en configuración alta" },
-  ULTRA:    { label: "CALIDAD ULTRA",   emoji: "🚀", desc: "Corre perfecto en Ultra — ¡Go play!" },
+  LOW:      { label: "CALIDAD BAJA",    emoji: "⚠️", desc: "Menos de 30 FPS - Rojo", color: "#ef4444" },
+  MEDIUM:   { label: "CALIDAD MEDIA",   emoji: "✅", desc: "30-60 FPS - Amarillo", color: "#eab308" },
+  HIGH:     { label: "CALIDAD ALTA",    emoji: "🔥", desc: "Más de 60 FPS - Verde", color: "#22c55e" },
 };
 
-const tierBarWidths = { NO_CORRE: "15%", LOW: "25%", MEDIUM: "55%", HIGH: "78%", ULTRA: "100%" };
+const tierBarWidths = { LOW: "30%", MEDIUM: "60%", HIGH: "100%" };
 
 function renderResult(result) {
   if (!result) return "<p class='text-red-400 font-mono text-sm'>Error al calcular. Verificá los datos.</p>";
@@ -515,44 +509,31 @@ function renderResult(result) {
   const tInfo = tierLabels[t];
   const barWidth = tierBarWidths[t];
 
-  const warningsHtml = result.issues.length > 0
+  const issuesHtml = result.issues.length > 0
     ? `<div class="mt-4 space-y-1">
         ${result.issues.map(w => `<div class="flex items-center gap-2 text-yellow-400 font-mono text-xs"><span>⚠</span><span>${w}</span></div>`).join("")}
        </div>`
     : "";
 
-  const penaltiesHtml = [];
-  if (result.cpuPenaltyApplied) penaltiesHtml.push("🔸 CPU limita el rendimiento de tu GPU (CPU bottleneck)");
-  if (result.ramPenaltyApplied) penaltiesHtml.push("🔸 RAM por debajo del recomendado — puede haber stuttering");
-  if (result.vramPenaltyApplied) penaltiesHtml.push("🔸 VRAM insuficiente: se aplica penalización del 40% por stuttering");
-
-  const penaltiesSection = penaltiesHtml.length > 0
+  const warningsHtml = result.warnings && result.warnings.length > 0
     ? `<div class="mt-3 space-y-1 border-t border-[#1a2e1a] pt-3">
-        ${penaltiesHtml.map(p => `<p class="text-[#aa8800] font-mono text-xs">${p}</p>`).join("")}
+        ${result.warnings.map(w => `<p class="text-[#eab308] font-mono text-xs">⚠ ${w}</p>`).join("")}
        </div>`
     : "";
 
-  const dynamicNotes = [];
-  if (result.optimizationNote) dynamicNotes.push(result.optimizationNote);
-  if (result.monitorNote) dynamicNotes.push(result.monitorNote);
-
-  const notesSection = dynamicNotes.length > 0
+  const notesSection = result.monitorNotes && result.monitorNotes.length > 0
     ? `<div class="mt-3 pt-3 border-t border-[#1a2e1a] space-y-1">
-        ${dynamicNotes.map(n => `<p class="text-[11px] text-[#7aa57a] font-mono">${n}</p>`).join("")}
+        ${result.monitorNotes.map(n => `<p class="text-[11px] text-[#7aa57a] font-mono">${n}</p>`).join("")}
        </div>`
     : "";
 
-  const fpsSection = t !== "NO_CORRE"
-    ? `<div class="text-center">
+  const fpsSection = `
+    <div class="text-center">
         <div class="text-[10px] font-mono text-[#4a6a4a] mb-1 tracking-widest uppercase">FPS estimados · 1080p</div>
-        <div class="fps-number font-orbitron font-black text-5xl md:text-6xl tier-${t}">
+        <div class="fps-number font-orbitron font-black text-5xl md:text-6xl" style="color: ${tInfo.color}">
           ${result.fpsMin}<span class="text-2xl opacity-50">–</span>${result.fpsMax}
         </div>
         <div class="text-[#4a6a4a] font-mono text-xs mt-1">fotogramas por segundo</div>
-       </div>`
-    : `<div class="text-center">
-        <div class="font-orbitron font-black text-3xl text-red-500" style="text-shadow: 0 0 10px rgba(255,50,50,0.5)">NO CORRE</div>
-        <div class="text-[#4a6a4a] font-mono text-xs mt-2">Necesitás mejorar tu hardware</div>
        </div>`;
 
   return `
@@ -581,19 +562,20 @@ function renderResult(result) {
           <div>
             <div class="text-[10px] font-mono text-[#4a6a4a] mb-3 tracking-widest uppercase">Rendimiento general</div>
             <!-- Barras de calidad -->
-            ${["LOW","MEDIUM","HIGH","ULTRA"].map(lvl => {
+            ${["LOW","MEDIUM","HIGH"].map(lvl => {
               const isActive = (
-                (lvl === "LOW" && ["LOW","MEDIUM","HIGH","ULTRA"].includes(t) && t !== "NO_CORRE") ||
-                (lvl === "MEDIUM" && ["MEDIUM","HIGH","ULTRA"].includes(t)) ||
-                (lvl === "HIGH" && ["HIGH","ULTRA"].includes(t)) ||
-                (lvl === "ULTRA" && t === "ULTRA")
+                (lvl === "LOW" && ["LOW","MEDIUM","HIGH"].includes(t)) ||
+                (lvl === "MEDIUM" && ["MEDIUM","HIGH"].includes(t)) ||
+                (lvl === "HIGH" && t === "HIGH")
               );
-              const labels = { LOW:"Baja", MEDIUM:"Media", HIGH:"Alta", ULTRA:"Ultra" };
+              const labels = { LOW:"Baja (Rojo)", MEDIUM:"Media (Amarillo)", HIGH:"Alta (Verde)" };
+              const colors = { LOW: "#ef4444", MEDIUM: "#eab308", HIGH: "#22c55e" };
+              const width = { LOW: "30%", MEDIUM: "60%", HIGH: "100%" };
               return `
                 <div class="flex items-center gap-3 mb-2">
-                  <div class="w-14 text-[10px] font-mono text-right ${isActive ? `tier-${lvl}` : "text-[#2a3a2a]"}">${labels[lvl]}</div>
+                  <div class="w-20 text-[10px] font-mono text-right ${isActive ? "" : "text-[#2a3a2a]"}" style="${isActive ? `color: ${colors[lvl]}` : ""}">${labels[lvl]}</div>
                   <div class="flex-1 h-2 bg-[#0d110d] rounded-full overflow-hidden border border-[#1a2e1a]">
-                    ${isActive ? `<div class="perf-bar h-full rounded-full bar-${lvl}" style="width:${barWidth}"></div>` : ""}
+                    ${isActive ? `<div class="h-full rounded-full" style="width:${width[lvl]}; background-color: ${colors[lvl]}"></div>` : ""}
                   </div>
                 </div>`;
             }).join("")}
@@ -620,12 +602,12 @@ function renderResult(result) {
             </div>
           </div>
           <div class="mt-3 pt-3 border-t border-[#1a2e1a] grid grid-cols-1 md:grid-cols-3 gap-2">
-            <p class="text-[11px] font-mono text-[#6f926f]">GPU Score: <span class="text-[#9fd89f]">${result.gpu.benchmark}</span></p>
-            <p class="text-[11px] font-mono text-[#6f926f]">CPU Score: <span class="text-[#9fd89f]">${result.cpu.benchmark}</span></p>
-            <p class="text-[11px] font-mono text-[#6f926f]">Opt. Juego: <span class="text-[#9fd89f]">x${result.optimizationMultiplier.toFixed(2)}</span></p>
+            <p class="text-[11px] font-mono text-[#6f926f]">GPU Power: <span class="text-[#9fd89f]">${result.gpu.benchmark} pts</span></p>
+            <p class="text-[11px] font-mono text-[#6f926f]">CPU Score: <span class="text-[#9fd89f]">${result.cpu.benchmark} pts</span></p>
+            <p class="text-[11px] font-mono text-[#6f926f]">Dificultad: <span class="text-[#9fd89f]">${result.difficulty}/10</span></p>
           </div>
+          ${issuesHtml}
           ${warningsHtml}
-          ${penaltiesSection}
           ${notesSection}
         </div>
 
@@ -690,44 +672,33 @@ function renderCommunityTips(result) {
 
 function renderTips(result) {
   const t = result.tier;
-  if (t === "NO_CORRE") {
-    return `<div class="bg-red-950/30 border border-red-900/40 rounded-xl p-4">
-      <div class="text-[10px] font-mono text-red-400/60 mb-2 tracking-widest">// RECOMENDACIONES</div>
-      <ul class="space-y-1.5">
-        <li class="font-mono text-xs text-red-400/80">→ Actualizá tu GPU a una de gama media (RX 6600 XT / RTX 3060 mínimo)</li>
-        <li class="font-mono text-xs text-red-400/80">→ Verificá los requisitos mínimos oficiales del juego</li>
-        <li class="font-mono text-xs text-red-400/80">→ Considerá bajar la resolución a 720p como alternativa temporal</li>
-      </ul>
-    </div>`;
-  }
   if (t === "LOW") {
-    return `<div class="bg-yellow-950/20 border border-yellow-900/30 rounded-xl p-4">
-      <div class="text-[10px] font-mono text-yellow-400/60 mb-2 tracking-widest">// TIPS PARA MEJORAR</div>
+    return `<div class="rounded-xl p-4 border" style="background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3);">
+      <div class="text-[10px] font-mono mb-2 tracking-widest" style="color: #ef4444;">// TIPS PARA MEJORAR (ROJO)</div>
       <ul class="space-y-1.5">
-        <li class="font-mono text-xs text-yellow-400/80">→ Bajá sombras a "Baja" o "Apagado" — mayor impacto en FPS</li>
-        <li class="font-mono text-xs text-yellow-400/80">→ Activá FSR 2 (AMD) o DLSS (NVIDIA) si el juego lo soporta</li>
-        <li class="font-mono text-xs text-yellow-400/80">→ Cerrá todas las aplicaciones en segundo plano antes de jugar</li>
-        <li class="font-mono text-xs text-yellow-400/80">→ Reducí la resolución a 900p puede darte un 20-30% más de FPS</li>
+        <li class="font-mono text-xs" style="color: rgba(239,68,68,0.8);">→ Bajá sombras a "Baja" o "Apagado" — mayor impacto en FPS</li>
+        <li class="font-mono text-xs" style="color: rgba(239,68,68,0.8);">→ Activá FSR 2 (AMD) o DLSS (NVIDIA) si el juego lo soporta</li>
+        <li class="font-mono text-xs" style="color: rgba(239,68,68,0.8);">→ Reducí la resolución a 900p puede darte un 20-30% más de FPS</li>
       </ul>
     </div>`;
   }
   if (t === "MEDIUM") {
-    return `<div class="bg-[#0d110d] border border-[#1a2e1a] rounded-xl p-4">
-      <div class="text-[10px] font-mono text-[#4a6a4a] mb-2 tracking-widest">// TIPS PARA EXPRIMIR MÁS</div>
+    return `<div class="rounded-xl p-4 border" style="background: rgba(234,179,8,0.1); border-color: rgba(234,179,8,0.3);">
+      <div class="text-[10px] font-mono mb-2 tracking-widest" style="color: #eab308;">// TIPS PARA EXPRIMIR MÁS (AMARILLO)</div>
       <ul class="space-y-1.5">
-        <li class="font-mono text-xs text-[#5a7a5a]">→ Activá ReBAR (Resizable BAR) en BIOS si tu placa lo soporta</li>
-        <li class="font-mono text-xs text-[#5a7a5a]">→ Ajustá las sombras — podés subirlas a Alta con poco impacto</li>
-        <li class="font-mono text-xs text-[#5a7a5a]">→ Verificá que tu GPU esté en el slot PCIe x16 principal</li>
+        <li class="font-mono text-xs" style="color: rgba(234,179,8,0.8);">→ Activá ReBAR (Resizable BAR) en BIOS si tu placa lo soporta</li>
+        <li class="font-mono text-xs" style="color: rgba(234,179,8,0.8);">→ Ajustá las sombras — podés subirlas a Alta con poco impacto</li>
+        <li class="font-mono text-xs" style="color: rgba(234,179,8,0.8);">→ Activá DLSS/FSR si el juego lo soporta</li>
       </ul>
     </div>`;
   }
-  if (t === "HIGH" || t === "ULTRA") {
-    return `<div class="bg-[#0d110d] border border-[#1a2e1a] rounded-xl p-4">
-      <div class="text-[10px] font-mono text-neon mb-2 tracking-widest" style="color: #39ff14;">// ¡LISTO PARA JUGAR!</div>
+  if (t === "HIGH") {
+    return `<div class="rounded-xl p-4 border" style="background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3);">
+      <div class="text-[10px] font-mono mb-2 tracking-widest" style="color: #22c55e;">// ¡LISTO PARA JUGAR! (VERDE)</div>
       <ul class="space-y-1.5">
-        <li class="font-mono text-xs text-[#5a7a5a]">→ Tu PC está optimizada para este juego — activá Ray Tracing si está disponible</li>
-        <li class="font-mono text-xs text-[#5a7a5a]">→ Considerá usar G-Sync o FreeSync para una experiencia aún más fluida</li>
-        <li class="font-mono text-xs text-[#5a7a5a]">→ Si querés, podés subir a 1440p o 4K con este hardware</li>
+        <li class="font-mono text-xs" style="color: rgba(34,197,94,0.8);">→ Tu PC está optimizada para este juego — activá Ray Tracing si está disponible</li>
+        <li class="font-mono text-xs" style="color: rgba(34,197,94,0.8);">→ Considerá usar G-Sync o FreeSync para una experiencia aún más fluida</li>
+        <li class="font-mono text-xs" style="color: rgba(34,197,94,0.8);">→ Si querés, podés subir a 1440p o 4K con este hardware</li>
       </ul>
     </div>`;
   }
