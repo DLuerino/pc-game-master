@@ -631,6 +631,14 @@ function renderResult(result) {
         <!-- Tips según el resultado -->
         ${renderTips(result)}
 
+        <!-- Share Card Button -->
+        <div class="border-t border-[#1a2e1a] pt-5 mt-4">
+          <button id="btn-generate-report" onclick="generateReport()" class="w-full py-3 px-4 rounded-xl font-mono text-sm tracking-wider transition-all duration-200 flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #0d110d 0%, #1a2e1a 100%); border: 1px solid #39ff14; color: #39ff14;" onmouseover="this.style.boxShadow='0 0 20px rgba(57,255,20,0.4)'" onmouseout="this.style.boxShadow='none'">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            📸 Generar Ficha Técnica
+          </button>
+        </div>
+
       </div>
     </div>
   `;
@@ -723,7 +731,137 @@ function renderTips(result) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   6. FAQ RENDERER
+   6. SHARE CARD GENERATOR
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function generateReport() {
+  const resultArea = document.getElementById("result-area");
+  if (!resultArea || !resultArea.innerHTML.trim()) {
+    alert("Primero realizá un análisis para generar la ficha.");
+    return;
+  }
+
+  const result = window._currentResult;
+  if (!result) {
+    alert("No se encontró el resultado del análisis.");
+    return;
+  }
+
+  const template = document.getElementById("share-card-template");
+  if (!template) return;
+
+  const tierColors = { LOW: "#ef4444", MEDIUM: "#eab308", HIGH: "#22c55e", ULTRA: "#00cfff" };
+  const tierNames = { LOW: "CALIDAD BAJA", MEDIUM: "CALIDAD MEDIA", HIGH: "CALIDAD ALTA", ULTRA: "RENDIMIENTO ULTRA" };
+  const tierBg = { LOW: "rgba(239,68,68,0.15)", MEDIUM: "rgba(234,179,8,0.15)", HIGH: "rgba(34,197,94,0.15)", ULTRA: "rgba(0,207,255,0.15)" };
+
+  const perfModeText = result.scalingEnabled ? "MODO: ESCALADO ACTIVO (1.4x)" : "MODO: RESOLUCIÓN NATIVA";
+  const perfModeColor = result.scalingEnabled ? "#39ff14" : "#7a9a7a";
+
+  template.innerHTML = `
+    <div style="width: 540px; padding: 40px 36px; background: #080a08; font-family: 'Share Tech Mono', monospace; color: #c8d8c8; box-sizing: border-box; border: 2px solid #39ff14; box-shadow: 0 0 40px rgba(57,255,20,0.2);">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #1a2e1a;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 36px; height: 36px; border: 2px solid #39ff14; border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 12px rgba(57,255,20,0.4);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#39ff14" stroke-width="2"><rect x="2" y="4" width="20" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><path d="M9 9h1M14 9h1M11.5 11V9.5M11.5 9.5H10M11.5 9.5H13"/></svg>
+          </div>
+          <span style="font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 16px; color: #39ff14; text-shadow: 0 0 10px rgba(57,255,20,0.5); letter-spacing: 2px;">PC GAME MASTER</span>
+        </div>
+        <div style="font-size: 10px; color: #4a6a4a; letter-spacing: 1px;">REPORTE DE RENDIMIENTO</div>
+      </div>
+
+      <!-- Game Name & Tier -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div style="font-size: 11px; color: #4a6a4a; letter-spacing: 3px; margin-bottom: 8px;">// ANÁLISIS PARA</div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 12px;">${result.game.emoji} ${result.game.name}</div>
+        <div style="display: inline-block; padding: 8px 20px; background: ${tierBg[result.tier] || tierBg.HIGH}; border: 1px solid ${tierColors[result.tier] || tierColors.HIGH}; border-radius: 6px;">
+          <span style="font-size: 14px; font-weight: 700; color: ${tierColors[result.tier] || tierColors.HIGH}; text-shadow: 0 0 10px ${tierColors[result.tier] || tierColors.HIGH};">${tierNames[result.tier] || tierNames.HIGH}</span>
+        </div>
+      </div>
+
+      <!-- FPS Display -->
+      <div style="text-align: center; padding: 24px; background: #0d110d; border: 1px solid #1a2e1a; border-radius: 12px; margin-bottom: 20px;">
+        <div style="font-size: 10px; color: #4a6a4a; letter-spacing: 3px; margin-bottom: 8px;">FPS ESTIMADOS · 1080P</div>
+        <div style="font-family: 'Orbitron', sans-serif; font-size: 64px; font-weight: 900; color: ${tierColors[result.tier] || tierColors.HIGH}; text-shadow: 0 0 30px ${tierColors[result.tier] || tierColors.HIGH}; line-height: 1;">
+          ${result.fpsMin}<span style="font-size: 36px; opacity: 0.5; margin: 0 8px;">–</span>${result.fpsMax}
+        </div>
+        <div style="font-size: 12px; color: #4a6a4a; margin-top: 8px;">fotogramas por segundo</div>
+        <div style="margin-top: 12px;">
+          <span style="display: inline-block; padding: 4px 12px; font-size: 10px; letter-spacing: 1px; color: ${perfModeColor}; background: ${result.scalingEnabled ? 'rgba(57,255,20,0.1)' : 'rgba(122,154,122,0.1)'}; border: 1px solid ${perfModeColor}; border-radius: 4px;">${perfModeText}</span>
+        </div>
+      </div>
+
+      <!-- Specs Grid -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px;">
+        <div style="text-align: center; padding: 16px 12px; background: #0a0e0a; border: 1px solid #1a2e1a; border-radius: 8px;">
+          <div style="font-size: 9px; color: #4a6a4a; letter-spacing: 2px; margin-bottom: 6px;">GPU</div>
+          <div style="font-size: 12px; color: #7a9a7a; font-weight: 500;">${result.gpu.name}</div>
+        </div>
+        <div style="text-align: center; padding: 16px 12px; background: #0a0e0a; border: 1px solid #1a2e1a; border-radius: 8px;">
+          <div style="font-size: 9px; color: #4a6a4a; letter-spacing: 2px; margin-bottom: 6px;">CPU</div>
+          <div style="font-size: 12px; color: #7a9a7a; font-weight: 500;">${result.cpu.name}</div>
+        </div>
+        <div style="text-align: center; padding: 16px 12px; background: #0a0e0a; border: 1px solid #1a2e1a; border-radius: 8px;">
+          <div style="font-size: 9px; color: #4a6a4a; letter-spacing: 2px; margin-bottom: 6px;">RAM</div>
+          <div style="font-size: 12px; color: #7a9a7a; font-weight: 500;">${result.ram} GB</div>
+        </div>
+      </div>
+
+      <!-- Stats Row -->
+      <div style="display: flex; justify-content: center; gap: 24px; padding: 14px; background: #0a0e0a; border: 1px solid #1a2e1a; border-radius: 8px; margin-bottom: 24px;">
+        <div style="text-align: center;">
+          <div style="font-size: 18px; color: #9fd89f; font-weight: 700;">${result.gpu.benchmark} <span style="font-size: 10px; color: #4a6a4a;">PTS</span></div>
+          <div style="font-size: 9px; color: #4a6a4a; letter-spacing: 1px;">GPU POWER</div>
+        </div>
+        <div style="width: 1px; background: #1a2e1a;"></div>
+        <div style="text-align: center;">
+          <div style="font-size: 18px; color: #9fd89f; font-weight: 700;">${result.cpu.benchmark} <span style="font-size: 10px; color: #4a6a4a;">PTS</span></div>
+          <div style="font-size: 9px; color: #4a6a4a; letter-spacing: 1px;">CPU SCORE</div>
+        </div>
+        <div style="width: 1px; background: #1a2e1a;"></div>
+        <div style="text-align: center;">
+          <div style="font-size: 18px; color: #9fd89f; font-weight: 700;">${result.difficulty}/10</div>
+          <div style="font-size: 9px; color: #4a6a4a; letter-spacing: 1px;">DIFICULTAD</div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid #1a2e1a;">
+        <div style="font-size: 10px; color: #2a4a2a; letter-spacing: 1px;">${result.game.genre} · ${result.game.year}</div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="font-size: 10px; color: #2a4a2a; letter-spacing: 1px;">pcgamemaster.github.io</div>
+          <div style="width: 32px; height: 32px; border: 1px solid #1a2e1a; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#39ff14" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  template.classList.remove("hidden");
+
+  setTimeout(() => {
+    html2canvas(template, {
+      backgroundColor: "#080a08",
+      scale: 2,
+      useCORS: true,
+      logging: false
+    }).then(canvas => {
+      template.classList.add("hidden");
+      const link = document.createElement("a");
+      link.download = `PC-Master-Report-${result.game.name.replace(/\s+/g, "-")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }).catch(err => {
+      template.classList.add("hidden");
+      console.error("Error generating report:", err);
+      alert("Error al generar la ficha técnica.");
+    });
+  }, 100);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   7. FAQ RENDERER
    ══════════════════════════════════════════════════════════════════════════ */
 
 function renderFAQ() {
@@ -815,6 +953,7 @@ function runAnalysis({ showValidation = false, withLoader = false, smoothScroll 
       current.gpuLabel,
       current.cpuLabel
     );
+    window._currentResult = result;
     resultArea.classList.remove("hidden");
     resultArea.innerHTML = renderResult(result);
     hasRenderedResult = true;

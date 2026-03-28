@@ -21,6 +21,8 @@
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas for trophy card generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -515,6 +517,9 @@
         <p class="text-[#1a3a1a] text-[10px]">Rectangle 300×250 · Colocá aquí tu script de AdSense</p>
       </div>
     </div>
+
+    <!-- ═══════════════════════════ SHARE CARD TEMPLATE ═══════════════════════════ -->
+    <div id="share-card-template" class="hidden fixed inset-0 z-50 flex items-center justify-center" style="background: rgba(8,10,8,0.95);"></div>
 
     <!-- ═══════════════════════════════ FAQ ═══════════════════════════════ -->
     <section id="faq" class="mb-8">
