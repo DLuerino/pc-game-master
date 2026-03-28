@@ -851,9 +851,9 @@ function generateReport() {
       const gameName = result.game.name;
       const fpsRange = `${result.fpsMin}-${result.fpsMax} FPS`;
       const perfMode = result.scalingEnabled ? "Escalado (FSR/DLSS)" : "Nativo";
-      const siteUrl = window.location.origin + window.location.pathname;
+      const siteUrl = 'https://dluerino.github.io/pc-game-master/';
 
-      const shareText = `🏆 ¡Mirá mi Reporte de Misión para ${gameName}! Mis FPS: ${fpsRange}. Probá tu PC acá:`;
+      const shareText = `🏆 ¡Mirá mi Reporte para ${gameName}! Mis FPS: ${fpsRange}. Probá tu PC acá:`;
       const shareTags = `#PCGameMaster #Gamer #Hardware #Build`;
 
       const handleShare = (blob) => {
